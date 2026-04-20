@@ -2,6 +2,9 @@
 Custom exception hierarchy for the application.
 All business errors should raise these exceptions.
 The global exception handler in middleware.py will convert them to HTTP responses.
+
+Design: Every subclass accepts optional `code` and `message` overrides
+so callers can provide context-specific messages without creating new classes.
 """
 
 
@@ -30,8 +33,13 @@ class AppException(Exception):
 # ------------------------------------------------------------------ #
 
 class BadRequestException(AppException):
-    def __init__(self, message: str, details: dict | None = None) -> None:
-        super().__init__(400, "BAD_REQUEST", message, details)
+    def __init__(
+        self,
+        message: str = "Permintaan tidak valid.",
+        code: str = "BAD_REQUEST",
+        details: dict | None = None,
+    ) -> None:
+        super().__init__(400, code, message, details)
 
 
 class InsufficientBalanceException(AppException):
@@ -65,7 +73,7 @@ class InvalidStateTransitionException(AppException):
 class InvitationExpiredException(AppException):
     def __init__(self) -> None:
         super().__init__(
-            400,
+            410,
             "INVITATION_EXPIRED",
             "Kode undangan sudah kadaluarsa. Minta parent untuk membuat kode baru.",
         )
@@ -74,7 +82,7 @@ class InvitationExpiredException(AppException):
 class InvitationAlreadyUsedException(AppException):
     def __init__(self) -> None:
         super().__init__(
-            400,
+            409,
             "INVITATION_ALREADY_USED",
             "Kode undangan sudah digunakan.",
         )
@@ -83,7 +91,7 @@ class InvitationAlreadyUsedException(AppException):
 class AlreadyMemberException(AppException):
     def __init__(self) -> None:
         super().__init__(
-            400,
+            409,
             "ALREADY_MEMBER",
             "Akun ini sudah tergabung dalam sebuah family.",
         )
@@ -103,8 +111,19 @@ class MinimumExchangeException(AppException):
 # ------------------------------------------------------------------ #
 
 class UnauthorizedException(AppException):
-    def __init__(self, message: str = "Autentikasi diperlukan.") -> None:
-        super().__init__(401, "UNAUTHORIZED", message)
+    def __init__(
+        self,
+        message: str = "Autentikasi diperlukan.",
+        code: str = "UNAUTHORIZED",
+        details: dict | None = None,
+    ) -> None:
+        super().__init__(401, code, message, details)
+
+
+class InvalidCredentialsException(AppException):
+    def __init__(self) -> None:
+        # Generic message — do NOT reveal whether email exists or password is wrong
+        super().__init__(401, "INVALID_CREDENTIALS", "Email atau password salah.")
 
 
 class TokenExpiredException(AppException):
@@ -117,19 +136,18 @@ class InvalidTokenException(AppException):
         super().__init__(401, "INVALID_TOKEN", "Token tidak valid.")
 
 
-class InvalidCredentialsException(AppException):
-    def __init__(self) -> None:
-        # Generic message — do NOT reveal whether email exists or password is wrong
-        super().__init__(401, "INVALID_CREDENTIALS", "Email atau password salah.")
-
-
 # ------------------------------------------------------------------ #
 # 403 Forbidden
 # ------------------------------------------------------------------ #
 
 class ForbiddenException(AppException):
-    def __init__(self, message: str = "Anda tidak memiliki akses ke resource ini.") -> None:
-        super().__init__(403, "FORBIDDEN", message)
+    def __init__(
+        self,
+        message: str = "Anda tidak memiliki akses ke resource ini.",
+        code: str = "FORBIDDEN",
+        details: dict | None = None,
+    ) -> None:
+        super().__init__(403, code, message, details)
 
 
 class InactiveAccountException(AppException):
@@ -142,8 +160,12 @@ class InactiveAccountException(AppException):
 # ------------------------------------------------------------------ #
 
 class NotFoundException(AppException):
-    def __init__(self, resource: str = "Resource") -> None:
-        super().__init__(404, "NOT_FOUND", f"{resource} tidak ditemukan.")
+    def __init__(
+        self,
+        resource: str = "Resource",
+        code: str = "NOT_FOUND",
+    ) -> None:
+        super().__init__(404, code, f"{resource} tidak ditemukan.")
 
 
 # ------------------------------------------------------------------ #
@@ -151,13 +173,18 @@ class NotFoundException(AppException):
 # ------------------------------------------------------------------ #
 
 class ConflictException(AppException):
-    def __init__(self, message: str) -> None:
-        super().__init__(409, "CONFLICT", message)
+    def __init__(
+        self,
+        message: str = "Konflik data.",
+        code: str = "CONFLICT",
+        details: dict | None = None,
+    ) -> None:
+        super().__init__(409, code, message, details)
 
 
 class EmailAlreadyExistsException(AppException):
     def __init__(self) -> None:
-        super().__init__(409, "EMAIL_EXISTS", "Email ini sudah terdaftar.")
+        super().__init__(409, "EMAIL_ALREADY_EXISTS", "Email ini sudah terdaftar.")
 
 
 class FamilyAlreadyExistsException(AppException):

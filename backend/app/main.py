@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 
+from app.api.v1.router import api_router
 from app.config import get_settings
 from app.core.logging import configure_logging
 from app.core.middleware import register_exception_handlers, register_middleware
@@ -96,9 +97,8 @@ def create_app() -> FastAPI:
             "database": "connected" if db_ok else "disconnected",
         }
 
-    # ── API Routes (added per phase) ─────────────────────────────────
-    # from app.api.v1.router import api_router
-    # application.include_router(api_router, prefix="/api/v1")
+    # ── API Routes ────────────────────────────────────────────────────
+    application.include_router(api_router, prefix="/api/v1")
 
     return application
 

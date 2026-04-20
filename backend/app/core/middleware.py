@@ -111,6 +111,23 @@ def _error_body(
 # Global Exception Handlers
 # ------------------------------------------------------------------ #
 
+def _sanitize_validation_errors(errors: list) -> list:
+    """
+    Pydantic v2 may embed non-JSON-serializable objects (e.g. ValueError)
+    inside errors()[*]['ctx']['error']. Convert those to strings.
+    """
+    sanitized = []
+    for err in errors:
+        safe = dict(err)
+        if "ctx" in safe and isinstance(safe["ctx"], dict):
+            safe["ctx"] = {
+                k: str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v
+                for k, v in safe["ctx"].items()
+            }
+        sanitized.append(safe)
+    return sanitized
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Register all global exception handlers on the FastAPI app."""
 
@@ -138,13 +155,14 @@ def register_exception_handlers(app: FastAPI) -> None:
         This is the exception FastAPI actually raises — not raw pydantic.ValidationError.
         """
         request_id = _get_request_id(request)
-        log.warning("validation_error", errors=exc.errors())
+        safe_errors = _sanitize_validation_errors(exc.errors())
+        log.warning("validation_error", errors=safe_errors)
         return JSONResponse(
             status_code=422,
             content=_error_body(
                 "VALIDATION_ERROR",
                 "Input tidak valid. Periksa kembali data yang Anda kirim.",
-                {"errors": exc.errors()},
+                {"errors": safe_errors},
                 request_id,
             ),
         )
@@ -154,7 +172,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request, exc: Exception
     ) -> JSONResponse:
         request_id = _get_request_id(request)
-        log.exception("unhandled_exception", exc_info=exc)
+        log.exception("unhandled_exception", error_type=type(exc).__name__, error=repr(exc))
         return JSONResponse(
             status_code=500,
             content=_error_body(

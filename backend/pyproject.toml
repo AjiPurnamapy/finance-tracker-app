@@ -20,6 +20,8 @@ dependencies = [
 
     # Schema & config
     "pydantic>=2.7.0",
+    "pydantic[email]>=2.7.0",
+    "email-validator>=2.1.0",
     "pydantic-settings>=2.3.0",
     "python-dotenv>=1.0.0",
 

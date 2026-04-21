@@ -88,6 +88,15 @@ class InvitationAlreadyUsedException(AppException):
         )
 
 
+class InvitationCancelledException(AppException):
+    def __init__(self) -> None:
+        super().__init__(
+            410,
+            "INVITATION_CANCELLED",
+            "Kode undangan sudah dibatalkan. Minta parent untuk membuat kode baru.",
+        )
+
+
 class AlreadyMemberException(AppException):
     def __init__(self) -> None:
         super().__init__(

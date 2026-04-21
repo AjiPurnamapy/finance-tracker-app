@@ -18,6 +18,8 @@ from app.models.base import Base  # noqa: F401 — must import Base
 # Import all models so their metadata is registered with Base
 from app.models.user import User  # noqa: F401
 from app.models.refresh_token import RefreshToken  # noqa: F401
+from app.models.family import Family, FamilyMember  # noqa: F401
+from app.models.invitation import Invitation  # noqa: F401
 # (Add more model imports here as each phase adds new models)
 
 # ------------------------------------------------------------------ #

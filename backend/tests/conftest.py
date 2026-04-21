@@ -28,6 +28,7 @@ from app.config import get_settings  # noqa: E402
 from app.database import get_db  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.models.base import Base  # noqa: E402
+import app.models  # noqa: E402, F401 — ensure ALL models are registered with Base
 
 # ------------------------------------------------------------------ #
 # Clear cached settings so test env vars take effect

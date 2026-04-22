@@ -12,3 +12,9 @@ from app.models.invitation import Invitation  # noqa: F401
 from app.models.wallet import Wallet  # noqa: F401
 from app.models.task import Task  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401
+
+# Phase 5
+from app.models.allowance import Allowance  # noqa: F401
+from app.models.fund_request import FundRequest  # noqa: F401
+from app.models.expense import Expense  # noqa: F401
+from app.models.pts_exchange_rate import PtsExchangeRate  # noqa: F401

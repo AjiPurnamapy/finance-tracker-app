@@ -3,13 +3,15 @@ Wallet & Transaction endpoints.
 
 GET  /api/v1/wallets/me                    — Get my wallet
 GET  /api/v1/wallets/family/{family_id}    — Get all family wallets (parent only)
+POST /api/v1/wallets/topup                 — Parent top-up IDR wallet (no payment gateway)
+POST /api/v1/wallets/exchange-pts          — Exchange PTS to IDR
 GET  /api/v1/transactions/                 — List transactions (paginated)
 GET  /api/v1/transactions/{id}             — Get transaction detail
 """
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, require_parent
@@ -17,6 +19,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.common import PaginatedResponse, PaginationMeta, SuccessResponse
 from app.schemas.task import TransactionResponse, WalletResponse
+from app.schemas.wallet import ExchangePtsRequest, ExchangePtsResponse, TopupWalletRequest
 from app.services import transaction_service, wallet_service
 
 wallet_router = APIRouter(prefix="/wallets", tags=["Wallets"])
@@ -52,6 +55,47 @@ async def get_family_wallets(
 ):
     wallets = await wallet_service.get_family_wallets(current_user, family_id, db)
     return SuccessResponse(data=wallets)
+
+
+@wallet_router.post(
+    "/topup",
+    response_model=SuccessResponse[WalletResponse],
+    summary="Top-up wallet IDR (parent only, MVP: tanpa payment gateway)",
+    status_code=status.HTTP_200_OK,
+)
+async def topup_wallet(
+    data: TopupWalletRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_parent),
+):
+    """Parent credits their own IDR wallet directly (no payment gateway in MVP)."""
+    wallet = await wallet_service.topup(
+        user=current_user,
+        amount=data.amount,
+        description=data.description,
+        db=db,
+    )
+    return SuccessResponse(data=wallet)
+
+
+@wallet_router.post(
+    "/exchange-pts",
+    response_model=SuccessResponse[ExchangePtsResponse],
+    summary="Tukar PTS ke IDR menggunakan rate aktif",
+    status_code=status.HTTP_200_OK,
+)
+async def exchange_pts(
+    data: ExchangePtsRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Exchange PTS balance to IDR based on the active exchange rate."""
+    result = await wallet_service.exchange_pts(
+        user=current_user,
+        pts_amount=data.pts_amount,
+        db=db,
+    )
+    return SuccessResponse(data=result)
 
 
 # ------------------------------------------------------------------ #

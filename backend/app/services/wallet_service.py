@@ -180,3 +180,162 @@ async def _get_wallet_or_404(user_id: uuid.UUID, db: AsyncSession) -> Wallet:
 async def get_wallet_by_user_id(user_id: uuid.UUID, db: AsyncSession) -> Wallet:
     """Helper used by other services to get wallet without permission checks."""
     return await _get_wallet_or_404(user_id, db)
+
+
+async def topup(
+    user: User,
+    amount: Decimal,
+    description: str | None,
+    db: AsyncSession,
+) -> "WalletResponse":
+    """
+    Parent top-up their own IDR wallet.
+    MVP: no payment gateway — direct credit.
+    Parent-only operation.
+    """
+    from app.models.user import User as UserModel
+    from app.services import transaction_service
+    from app.core.constants import TransactionType
+    from app.models.family import FamilyMember
+    from sqlalchemy import select as sa_select
+
+    if user.role != "parent":
+        raise ForbiddenException(
+            code="PARENT_ROLE_REQUIRED",
+            message="Hanya parent yang bisa melakukan top-up wallet.",
+        )
+    if amount <= 0:
+        raise BadRequestException(
+            code="INVALID_AMOUNT",
+            message="Amount harus lebih dari 0.",
+        )
+
+    wallet = await _get_wallet_or_404(user.id, db)
+
+    # Get family_id for transaction record
+    membership = await db.scalar(
+        sa_select(FamilyMember).where(
+            FamilyMember.user_id == user.id,
+            FamilyMember.is_active == True,  # noqa: E712
+        )
+    )
+
+    await credit(wallet_id=wallet.id, amount=amount, currency=Currency.IDR, db=db)
+
+    # Record top-up as a transaction if in a family
+    if membership:
+        await transaction_service.create_transaction(
+            family_id=membership.family_id,
+            source_wallet_id=None,
+            destination_wallet_id=wallet.id,
+            amount=amount,
+            currency=Currency.IDR,
+            type=TransactionType.ALLOWANCE,
+            description=description or "Wallet top-up",
+            db=db,
+        )
+
+    # Refresh to get updated balance
+    await db.refresh(wallet)
+    log.info("wallet_topup", user_id=str(user.id), amount=str(amount))
+    return WalletResponse.model_validate(wallet)
+
+
+async def exchange_pts(
+    user: User,
+    pts_amount: Decimal,
+    db: AsyncSession,
+) -> "ExchangePtsResponse":
+    """
+    Exchange user's PTS to IDR based on active exchange rate.
+
+    Business rules:
+    - Minimum 100 PTS, must be multiple of 100
+    - Rate: X PTS = Y IDR (from pts_exchange_rates table)
+    - IDR credited = (pts_amount / rate.pts_amount) * rate.idr_amount
+    - Atomic: PTS debited and IDR credited in same DB transaction
+
+    IMPORTANT: All operations within single DB transaction from get_db().
+    """
+    from sqlalchemy import select as sa_select
+    from app.models.pts_exchange_rate import PtsExchangeRate
+    from app.models.family import FamilyMember
+    from app.services import transaction_service
+    from app.core.constants import TransactionType
+    from app.schemas.wallet import ExchangePtsResponse
+
+    if pts_amount <= 0:
+        raise BadRequestException(
+            code="INVALID_AMOUNT",
+            message="pts_amount harus lebih dari 0.",
+        )
+    if pts_amount < 100:
+        raise BadRequestException(
+            code="BELOW_MINIMUM_EXCHANGE",
+            message="Minimum exchange adalah 100 PTS.",
+        )
+    if pts_amount % 100 != 0:
+        raise BadRequestException(
+            code="NOT_MULTIPLE_OF_100",
+            message="pts_amount harus kelipatan 100.",
+        )
+
+    # Fetch active exchange rate
+    rate = await db.scalar(
+        sa_select(PtsExchangeRate).where(PtsExchangeRate.is_active == True)  # noqa: E712
+    )
+    if not rate:
+        raise NotFoundException(resource="PtsExchangeRate", code="NO_ACTIVE_RATE")
+
+    # Calculate IDR equivalent
+    idr_credited = (pts_amount / rate.pts_amount) * rate.idr_amount
+
+    # Get user wallet
+    wallet = await _get_wallet_or_404(user.id, db)
+
+    # Get family for transaction record
+    membership = await db.scalar(
+        sa_select(FamilyMember).where(
+            FamilyMember.user_id == user.id,
+            FamilyMember.is_active == True,  # noqa: E712
+        )
+    )
+
+    # Debit PTS (raises InsufficientBalanceException if not enough)
+    # NOTE: wallet object becomes stale after debit.
+    await debit(wallet_id=wallet.id, amount=pts_amount, currency=Currency.PTS, db=db)
+
+    # Credit IDR
+    await credit(wallet_id=wallet.id, amount=idr_credited, currency=Currency.IDR, db=db)
+
+    # Record transaction if in a family
+    if membership:
+        await transaction_service.create_transaction(
+            family_id=membership.family_id,
+            source_wallet_id=wallet.id,
+            destination_wallet_id=wallet.id,
+            amount=pts_amount,
+            currency=Currency.PTS,
+            type=TransactionType.PTS_EXCHANGE,
+            description=f"PTS exchange: {pts_amount} PTS → Rp {idr_credited:,.2f}",
+            db=db,
+        )
+
+    # Refresh wallet to get updated balances
+    await db.refresh(wallet)
+
+    log.info(
+        "pts_exchanged",
+        user_id=str(user.id),
+        pts_deducted=str(pts_amount),
+        idr_credited=str(idr_credited),
+    )
+
+    return ExchangePtsResponse(
+        pts_deducted=pts_amount,
+        idr_credited=idr_credited,
+        rate_pts=rate.pts_amount,
+        rate_idr=rate.idr_amount,
+        new_balance_pts=wallet.balance_pts,
+        new_balance_idr=wallet.balance_idr,
+    )

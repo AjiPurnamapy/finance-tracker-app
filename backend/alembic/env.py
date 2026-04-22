@@ -20,7 +20,10 @@ from app.models.user import User  # noqa: F401
 from app.models.refresh_token import RefreshToken  # noqa: F401
 from app.models.family import Family, FamilyMember  # noqa: F401
 from app.models.invitation import Invitation  # noqa: F401
-# (Add more model imports here as each phase adds new models)
+# Phase 4
+from app.models.wallet import Wallet  # noqa: F401
+from app.models.task import Task  # noqa: F401
+from app.models.transaction import Transaction  # noqa: F401
 
 # ------------------------------------------------------------------ #
 # Alembic config

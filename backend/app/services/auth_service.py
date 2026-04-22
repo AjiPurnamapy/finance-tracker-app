@@ -28,6 +28,7 @@ from app.core.security import (
 )
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
+from app.models.wallet import Wallet
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
@@ -67,7 +68,7 @@ async def register(
     - Hashes password with Argon2id + pepper
     - Creates user
     
-    NOTE: Wallet creation is deferred to Phase 4 when Wallet model is defined.
+    NOTE: Wallet is auto-created for every new user (Phase 4).
     """
     # 1. Check for duplicate email
     existing = await db.scalar(
@@ -87,6 +88,11 @@ async def register(
     )
     db.add(user)
     await db.flush()  # get the UUID assigned without committing yet
+
+    # 3. Auto-create wallet for every new user (Phase 4)
+    wallet = Wallet(user_id=user.id)
+    db.add(wallet)
+    await db.flush()
 
     log.info("user_registered", user_id=str(user.id), role=user.role)
     return user

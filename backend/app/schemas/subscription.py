@@ -1,9 +1,10 @@
+import uuid
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
+
 from app.core.constants import SubscriptionTier, SubscriptionStatus
 
-import uuid
 
 class SubscriptionResponse(BaseModel):
     id: uuid.UUID

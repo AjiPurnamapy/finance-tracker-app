@@ -19,6 +19,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import FundRequestStatus, TransactionType, NotificationType
+from app.services.notification_service import create_notification as create_notif
 from app.core.exceptions import (
     BadRequestException,
     ForbiddenException,
@@ -76,7 +77,6 @@ async def create_request(
     await db.flush()
     await db.refresh(fund_request)
 
-    from app.services.notification_service import create_notification
     # Notify family admins (parents)
     admins = await db.scalars(
         select(FamilyMember.user_id).where(
@@ -85,7 +85,7 @@ async def create_request(
         )
     )
     for admin_id in admins:
-        await create_notification(
+        await create_notif(
             session=db,
             user_id=admin_id,
             type=NotificationType.FUND_REQUEST_CREATED,
@@ -252,9 +252,8 @@ async def approve_request(
     await db.flush()
     await db.refresh(fund_request)
 
-    from app.services.notification_service import create_notification
     # Notify child
-    await create_notification(
+    await create_notif(
         session=db,
         user_id=fund_request.child_id,
         type=NotificationType.FUND_REQUEST_APPROVED,
@@ -316,9 +315,8 @@ async def reject_request(
     await db.flush()
     await db.refresh(fund_request)
 
-    from app.services.notification_service import create_notification
     # Notify child
-    await create_notification(
+    await create_notif(
         session=db,
         user_id=fund_request.child_id,
         type=NotificationType.FUND_REQUEST_REJECTED,

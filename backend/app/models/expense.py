@@ -65,7 +65,7 @@ class Expense(BaseModel):
         default=Currency.IDR,
     )
     category: Mapped[ExpenseCategory] = mapped_column(
-        Enum(ExpenseCategory, name="expensecategory", create_type=True),
+        Enum(ExpenseCategory, name="expensecategory", create_type=False),
         nullable=False,
         index=True,
     )

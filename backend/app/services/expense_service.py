@@ -31,20 +31,9 @@ from app.schemas.expense import (
     ExpenseResponse,
     UpdateExpenseRequest,
 )
+from app.services.common import get_active_family_membership
 
 log = structlog.get_logger(__name__)
-
-
-async def _get_user_family(user: User, db: AsyncSession) -> FamilyMember:
-    membership = await db.scalar(
-        select(FamilyMember).where(
-            FamilyMember.user_id == user.id,
-            FamilyMember.is_active == True,  # noqa: E712
-        )
-    )
-    if not membership:
-        raise NotFoundException(resource="Family", code="NOT_IN_FAMILY")
-    return membership
 
 
 async def create_expense(
@@ -59,7 +48,7 @@ async def create_expense(
     from app.services import transaction_service, wallet_service
 
     # Verify user is in a family
-    membership = await _get_user_family(user, db)
+    membership = await get_active_family_membership(user, db)
 
     spent_at = data.spent_at or datetime.now(UTC)
     wallet_id: uuid.UUID | None = None
@@ -132,7 +121,7 @@ async def list_expenses(
     Child: only own expenses.
     Filter by category optional.
     """
-    membership = await _get_user_family(user, db)
+    membership = await get_active_family_membership(user, db)
     family_id = membership.family_id
 
     if user.role == "parent":

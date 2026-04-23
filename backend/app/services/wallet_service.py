@@ -230,7 +230,7 @@ async def topup(
             destination_wallet_id=wallet.id,
             amount=amount,
             currency=Currency.IDR,
-            type=TransactionType.ALLOWANCE,
+            type=TransactionType.TOPUP,
             description=description or "Wallet top-up",
             db=db,
         )
@@ -280,9 +280,9 @@ async def exchange_pts(
             message="pts_amount harus kelipatan 100.",
         )
 
-    # Fetch active exchange rate
+    # Fetch active exchange rate with row lock to prevent race conditions
     rate = await db.scalar(
-        sa_select(PtsExchangeRate).where(PtsExchangeRate.is_active == True)  # noqa: E712
+        sa_select(PtsExchangeRate).where(PtsExchangeRate.is_active == True).with_for_update()  # noqa: E712
     )
     if not rate:
         raise NotFoundException(resource="PtsExchangeRate", code="NO_ACTIVE_RATE")

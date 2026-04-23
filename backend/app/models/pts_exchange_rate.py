@@ -11,7 +11,7 @@ Design notes:
 import uuid
 from decimal import Decimal
 
-from sqlalchemy import DECIMAL, Boolean, ForeignKey, Uuid
+from sqlalchemy import DECIMAL, Boolean, ForeignKey, Uuid, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
@@ -49,6 +49,19 @@ class PtsExchangeRate(BaseModel):
     # ------------------------------------------------------------------ #
     creator: Mapped["User | None"] = relationship(  # noqa: F821
         "User", lazy="noload"
+    )
+
+    # ------------------------------------------------------------------ #
+    # Indexes + Constraints
+    # ------------------------------------------------------------------ #
+    __table_args__ = (
+        Index(
+            "ix_pts_exchange_rates_active",
+            "is_active",
+            unique=True,
+            sqlite_where=text("is_active = 1"),
+            postgresql_where=text("is_active = true")
+        ),
     )
 
     def __repr__(self) -> str:

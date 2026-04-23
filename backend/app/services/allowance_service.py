@@ -24,21 +24,9 @@ from app.models.family import FamilyMember
 from app.models.user import User
 from app.schemas.allowance import AllowanceResponse, CreateAllowanceRequest, UpdateAllowanceRequest
 from app.schemas.task import TransactionResponse
+from app.services.common import get_active_family_membership
 
 log = structlog.get_logger(__name__)
-
-
-async def _get_user_family(user: User, db: AsyncSession) -> FamilyMember:
-    """Get active family membership or raise NotFoundException."""
-    membership = await db.scalar(
-        select(FamilyMember).where(
-            FamilyMember.user_id == user.id,
-            FamilyMember.is_active == True,  # noqa: E712
-        )
-    )
-    if not membership:
-        raise NotFoundException(resource="Family", code="NOT_IN_FAMILY")
-    return membership
 
 
 async def create_allowance(
@@ -57,7 +45,7 @@ async def create_allowance(
         )
 
     # Verify parent is in a family
-    membership = await _get_user_family(parent, db)
+    membership = await get_active_family_membership(parent, db)
     family_id = membership.family_id
 
     # Verify target child is in the same family
@@ -72,6 +60,14 @@ async def create_allowance(
         raise ForbiddenException(
             code="CHILD_NOT_IN_FAMILY",
             message="Child bukan anggota keluarga yang sama.",
+        )
+
+    # MVP: Allowances only support IDR
+    if data.currency != Currency.IDR:
+        from app.core.exceptions import BadRequestException
+        raise BadRequestException(
+            code="IDR_ONLY",
+            message="MVP: allowance hanya mendukung IDR.",
         )
 
     # Check child is actually a child role

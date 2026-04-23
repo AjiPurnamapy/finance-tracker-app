@@ -147,14 +147,30 @@ def upgrade() -> None:
     import uuid as _uuid
     from datetime import datetime, UTC
 
-    seed_id = str(_uuid.uuid4())
-    seed_now = datetime.now(UTC).isoformat()
-    conn = op.get_bind()
-    conn.execute(
-        sa.text(
-            f"INSERT INTO pts_exchange_rates (id, pts_amount, idr_amount, is_active, created_by, created_at, updated_at) "
-            f"VALUES ('{seed_id}'::uuid, 1000.00, 10000.00, true, NULL, '{seed_now}'::timestamptz, '{seed_now}'::timestamptz)"
-        )
+    seed_now = datetime.now(UTC)
+    pts_exchange_rates_table = sa.table(
+        'pts_exchange_rates',
+        sa.column('id', sa.Uuid),
+        sa.column('pts_amount', sa.DECIMAL),
+        sa.column('idr_amount', sa.DECIMAL),
+        sa.column('is_active', sa.Boolean),
+        sa.column('created_by', sa.Uuid),
+        sa.column('created_at', sa.DateTime(timezone=True)),
+        sa.column('updated_at', sa.DateTime(timezone=True)),
+    )
+    op.bulk_insert(
+        pts_exchange_rates_table,
+        [
+            {
+                'id': _uuid.uuid4(),
+                'pts_amount': 1000.00,
+                'idr_amount': 10000.00,
+                'is_active': True,
+                'created_by': None,
+                'created_at': seed_now,
+                'updated_at': seed_now,
+            }
+        ]
     )
 
 
@@ -180,3 +196,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_pts_exchange_rates_is_active'), table_name='pts_exchange_rates')
     op.drop_table('pts_exchange_rates')
     # ### end Alembic commands ###
+
+    # Drop enums created in Phase 5
+    conn = op.get_bind()
+    if conn.engine.name == "postgresql":
+        op.execute("DROP TYPE IF EXISTS expensecategory")
+        op.execute("DROP TYPE IF EXISTS fundrequesttype")
+        op.execute("DROP TYPE IF EXISTS fundrequeststatus")

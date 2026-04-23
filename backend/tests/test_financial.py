@@ -233,6 +233,25 @@ class TestFundRequest:
         data = res.json()["data"]
         assert data["status"] == "pending"
 
+    async def test_pending_request_limit(self, client, child_headers, family_setup):
+        # Create 10 pending requests
+        for i in range(10):
+            res = await client.post(
+                "/api/v1/fund-requests/",
+                json={"amount": "1000.00", "currency": "IDR", "type": "one_time"},
+                headers=child_headers,
+            )
+            assert res.status_code == 201
+
+        # The 11th should fail
+        res = await client.post(
+            "/api/v1/fund-requests/",
+            json={"amount": "1000.00", "currency": "IDR", "type": "one_time"},
+            headers=child_headers,
+        )
+        assert res.status_code == 400
+        assert res.json()["error"]["code"] == "TOO_MANY_PENDING"
+
     async def test_parent_cannot_create_fund_request(self, client, parent_headers, family_setup):
         res = await client.post(
             "/api/v1/fund-requests/",

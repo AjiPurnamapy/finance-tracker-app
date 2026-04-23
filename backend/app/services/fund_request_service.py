@@ -31,20 +31,9 @@ from app.schemas.fund_request import (
     CreateFundRequestRequest,
     FundRequestResponse,
 )
+from app.services.common import get_active_family_membership
 
 log = structlog.get_logger(__name__)
-
-
-async def _get_user_family(user: User, db: AsyncSession) -> FamilyMember:
-    membership = await db.scalar(
-        select(FamilyMember).where(
-            FamilyMember.user_id == user.id,
-            FamilyMember.is_active == True,  # noqa: E712
-        )
-    )
-    if not membership:
-        raise NotFoundException(resource="Family", code="NOT_IN_FAMILY")
-    return membership
 
 
 async def create_request(
@@ -59,7 +48,20 @@ async def create_request(
             message="Hanya child yang bisa membuat fund request.",
         )
 
-    membership = await _get_user_family(child, db)
+    membership = await get_active_family_membership(child, db)
+
+    # Check pending request limit (max 10)
+    pending_count = await db.scalar(
+        select(func.count()).where(
+            FundRequest.child_id == child.id,
+            FundRequest.status == FundRequestStatus.PENDING,
+        )
+    )
+    if pending_count and pending_count >= 10:
+        raise BadRequestException(
+            code="TOO_MANY_PENDING",
+            message="Anda memiliki 10 request yang masih pending. Tunggu parent memprosesnya.",
+        )
 
     fund_request = FundRequest(
         family_id=membership.family_id,
@@ -94,7 +96,7 @@ async def list_requests(
     Parent: all requests in family.
     Child: only own requests.
     """
-    membership = await _get_user_family(user, db)
+    membership = await get_active_family_membership(user, db)
     family_id = membership.family_id
 
     if user.role == "parent":
@@ -216,7 +218,7 @@ async def approve_request(
         destination_wallet_id=child_wallet.id,
         amount=fund_request.amount,
         currency=fund_request.currency,
-        type=TransactionType.ALLOWANCE,
+        type=TransactionType.FUND_REQUEST,
         description=f"Fund request approved: {fund_request.reason or 'Transfer dana'}",
         reference_type="fund_request",
         reference_id=fund_request.id,

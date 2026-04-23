@@ -65,7 +65,7 @@ class FundRequest(BaseModel):
         default=Currency.IDR,
     )
     type: Mapped[FundRequestType] = mapped_column(
-        Enum(FundRequestType, name="fundrequesttype", create_type=True),
+        Enum(FundRequestType, name="fundrequesttype", create_type=False),
         nullable=False,
         default=FundRequestType.ONE_TIME,
     )
@@ -75,7 +75,7 @@ class FundRequest(BaseModel):
     # State machine
     # ------------------------------------------------------------------ #
     status: Mapped[FundRequestStatus] = mapped_column(
-        Enum(FundRequestStatus, name="fundrequeststatus", create_type=True),
+        Enum(FundRequestStatus, name="fundrequeststatus", create_type=False),
         nullable=False,
         default=FundRequestStatus.PENDING,
         index=True,

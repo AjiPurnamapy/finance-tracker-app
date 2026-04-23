@@ -65,6 +65,8 @@ class TransactionType(str, Enum):
     EXPENSE = "expense"
     PTS_EXCHANGE = "pts_exchange"
     SUBSCRIPTION = "subscription"
+    TOPUP = "topup"
+    FUND_REQUEST = "fund_request"
 
 
 class FundRequestType(str, Enum):

@@ -21,6 +21,7 @@ from app.core.constants import (
     FamilyMemberRole,
     TaskStatus,
     TransactionType,
+    NotificationType,
 )
 from app.core.exceptions import (
     BadRequestException,
@@ -32,7 +33,7 @@ from app.models.family import FamilyMember
 from app.models.task import Task
 from app.models.user import User
 from app.schemas.task import CreateTaskRequest, TaskResponse, UpdateTaskRequest
-from app.services import transaction_service, wallet_service
+from app.services import transaction_service, wallet_service, notification_service
 
 log = structlog.get_logger(__name__)
 
@@ -318,6 +319,17 @@ async def submit_task(
     db.add(task)
     await db.flush()
     await db.refresh(task)
+
+    # Notify parent
+    await notification_service.create_notification(
+        session=db,
+        user_id=task.created_by,
+        type=NotificationType.TASK_SUBMITTED,
+        title="Task Disubmit",
+        message=f"Anak telah men-submit task: {task.title}",
+        data={"task_id": str(task.id)}
+    )
+
     log.info("task_submitted", task_id=str(task_id), by=str(user.id))
     return TaskResponse.model_validate(task)
 
@@ -384,6 +396,16 @@ async def approve_task(
     await db.flush()
     await db.refresh(task)
 
+    # Notify child
+    await notification_service.create_notification(
+        session=db,
+        user_id=task.assigned_to,
+        type=NotificationType.TASK_APPROVED,
+        title="Task Disetujui!",
+        message=f"Task '{task.title}' disetujui. Kamu mendapatkan {task.reward_amount} {task.reward_currency}!",
+        data={"task_id": str(task.id)}
+    )
+
     log.info(
         "task_approved",
         task_id=str(task_id),
@@ -414,6 +436,16 @@ async def reject_task(
     db.add(task)
     await db.flush()
     await db.refresh(task)
+
+    # Notify child
+    await notification_service.create_notification(
+        session=db,
+        user_id=task.assigned_to,
+        type=NotificationType.TASK_REJECTED,
+        title="Task Ditolak",
+        message=f"Task '{task.title}' ditolak oleh parent.",
+        data={"task_id": str(task.id)}
+    )
 
     log.info("task_rejected", task_id=str(task_id), by=str(user.id))
     return TaskResponse.model_validate(task)

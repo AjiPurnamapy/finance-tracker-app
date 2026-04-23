@@ -13,7 +13,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.constants import Currency, TransactionType
+from app.core.constants import Currency, TransactionType, NotificationType
 from app.core.exceptions import (
     ConflictException,
     ForbiddenException,
@@ -257,6 +257,16 @@ async def manual_transfer(
         reference_type="allowance",
         reference_id=allowance.id,
         db=db,
+    )
+
+    from app.services.notification_service import create_notification
+    await create_notification(
+        session=db,
+        user_id=allowance.child_id,
+        type=NotificationType.ALLOWANCE_RECEIVED,
+        title="Uang Saku Diterima!",
+        message=f"Hore! Uang saku sebesar {allowance.amount} {allowance.currency} telah ditransfer ke dompetmu.",
+        data={"allowance_id": str(allowance.id), "transaction_id": str(tx.id)}
     )
 
     log.info(

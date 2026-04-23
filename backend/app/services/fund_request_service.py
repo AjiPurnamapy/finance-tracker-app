@@ -18,7 +18,7 @@ import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.constants import FundRequestStatus, TransactionType
+from app.core.constants import FundRequestStatus, TransactionType, NotificationType
 from app.core.exceptions import (
     BadRequestException,
     ForbiddenException,
@@ -75,6 +75,24 @@ async def create_request(
     db.add(fund_request)
     await db.flush()
     await db.refresh(fund_request)
+
+    from app.services.notification_service import create_notification
+    # Notify family admins (parents)
+    admins = await db.scalars(
+        select(FamilyMember.user_id).where(
+            FamilyMember.family_id == membership.family_id,
+            FamilyMember.role == "admin"
+        )
+    )
+    for admin_id in admins:
+        await create_notification(
+            session=db,
+            user_id=admin_id,
+            type=NotificationType.FUND_REQUEST_CREATED,
+            title="Permintaan Dana Baru",
+            message=f"Anak meminta dana sebesar {fund_request.amount} {fund_request.currency}.",
+            data={"request_id": str(fund_request.id)}
+        )
 
     log.info(
         "fund_request_created",
@@ -234,6 +252,17 @@ async def approve_request(
     await db.flush()
     await db.refresh(fund_request)
 
+    from app.services.notification_service import create_notification
+    # Notify child
+    await create_notification(
+        session=db,
+        user_id=fund_request.child_id,
+        type=NotificationType.FUND_REQUEST_APPROVED,
+        title="Permintaan Dana Disetujui!",
+        message=f"Permintaan dana sebesar {fund_request.amount} {fund_request.currency} telah disetujui.",
+        data={"request_id": str(fund_request.id), "transaction_id": str(tx.id)}
+    )
+
     log.info(
         "fund_request_approved",
         request_id=str(request_id),
@@ -286,6 +315,17 @@ async def reject_request(
     db.add(fund_request)
     await db.flush()
     await db.refresh(fund_request)
+
+    from app.services.notification_service import create_notification
+    # Notify child
+    await create_notification(
+        session=db,
+        user_id=fund_request.child_id,
+        type=NotificationType.FUND_REQUEST_REJECTED,
+        title="Permintaan Dana Ditolak",
+        message=f"Permintaan dana sebesar {fund_request.amount} {fund_request.currency} telah ditolak.",
+        data={"request_id": str(fund_request.id)}
+    )
 
     log.info("fund_request_rejected", request_id=str(request_id), parent_id=str(parent.id))
     return FundRequestResponse.model_validate(fund_request)

@@ -15,6 +15,8 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
 os.environ.setdefault("SECRET_PEPPER", "test-pepper-not-for-production")
 os.environ.setdefault("ENVIRONMENT", "testing")
 os.environ.setdefault("LOG_LEVEL", "WARNING")
+# Disable rate limiting in tests (Redis is not available in test environment)
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
@@ -93,3 +95,21 @@ async def client(db_session) -> AsyncClient:
         yield ac
 
     test_app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def pts_exchange_rate(db_session: AsyncSession):
+    """
+    Seed an active PTS exchange rate into the test DB.
+    Required by any test involving PTS exchange (1000 PTS = Rp 10.000).
+    """
+    from app.models.pts_exchange_rate import PtsExchangeRate
+
+    rate = PtsExchangeRate(
+        pts_amount=1000,
+        idr_amount=10000,
+        is_active=True,
+    )
+    db_session.add(rate)
+    await db_session.flush()
+    return rate

@@ -1,8 +1,17 @@
 """
 FastAPI middleware stack:
-1. RequestIDMiddleware  — inject unique request_id into every request
-2. RequestLoggingMiddleware — log request/response with timing
-3. Global exception handler — convert AppException → JSON response
+1. SecurityHeadersMiddleware — add security headers to every response
+2. RateLimitMiddleware       — Redis-backed sliding window rate limiter
+3. RequestIDMiddleware       — inject unique request_id into every request
+4. RequestLoggingMiddleware  — log request/response with timing
+5. Global exception handlers — convert AppException → JSON response
+
+Rate limiting strategy:
+- Auth endpoints (/api/v1/auth/*): stricter limit (default 10 req/min)
+- All other endpoints: general limit (default 120 req/min)
+- Key: IP address from X-Forwarded-For or client.host
+- Fail-open: if Redis is unavailable, all requests pass through
+- Algorithm: Fixed window counter (per minute) — simple & production-safe MVP
 """
 
 import time
@@ -20,6 +29,120 @@ from app.config import get_settings
 from app.core.exceptions import AppException
 
 log = structlog.get_logger(__name__)
+
+
+# ------------------------------------------------------------------ #
+# Security Headers Middleware
+# ------------------------------------------------------------------ #
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Adds security-hardening HTTP headers to every response.
+    These headers protect against common browser-based attacks.
+    """
+
+    HEADERS = {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-XSS-Protection": "1; mode=block",
+        "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+    }
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        response = await call_next(request)
+        for header, value in self.HEADERS.items():
+            response.headers[header] = value
+        return response
+
+
+# ------------------------------------------------------------------ #
+# Rate Limit Middleware (Redis-backed, fail-open)
+# ------------------------------------------------------------------ #
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Sliding fixed-window rate limiter using Redis INCR + EXPIRE.
+
+    Algorithm:
+    1. Build key: rate_limit:{ip}:{endpoint_type}:{current_minute}
+    2. INCR the counter
+    3. If counter == 1 (first hit), set TTL to 60 seconds
+    4. If counter > limit → return 429
+
+    Fail-open: if Redis is unavailable, all requests pass through
+    and a warning is logged.
+    """
+
+    # Paths that get the stricter auth rate limit
+    AUTH_PATHS = {"/api/v1/auth/login", "/api/v1/auth/register"}
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        settings = get_settings()
+
+        if not settings.RATE_LIMIT_ENABLED:
+            return await call_next(request)
+
+        # Skip rate limiting for health check
+        if request.url.path == "/health":
+            return await call_next(request)
+
+        # Lazy import to avoid circular dependency
+        from app.core.redis import get_redis
+
+        redis = await get_redis()
+        if redis is None:
+            # Fail-open: Redis unavailable, let request through
+            return await call_next(request)
+
+        # Identify client IP
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (
+            request.client.host if request.client else "unknown"
+        )
+
+        # Determine which limit to apply
+        is_auth = request.url.path in self.AUTH_PATHS
+        limit = settings.RATE_LIMIT_AUTH_RPM if is_auth else settings.RATE_LIMIT_GENERAL_RPM
+        endpoint_type = "auth" if is_auth else "general"
+
+        # Fixed-window key: changes every minute
+        current_minute = int(time.time() // 60)
+        redis_key = f"rate_limit:{client_ip}:{endpoint_type}:{current_minute}"
+
+        try:
+            from redis.exceptions import RedisError
+            # Atomic INCR
+            count = await redis.incr(redis_key)
+            if count == 1:
+                # First request this minute — set TTL
+                await redis.expire(redis_key, 60)
+
+            if count > limit:
+                log.warning(
+                    "rate_limit_exceeded",
+                    ip=client_ip,
+                    endpoint_type=endpoint_type,
+                    count=count,
+                    limit=limit,
+                )
+                retry_after = 60 - (int(time.time()) % 60)
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "success": False,
+                        "error": {
+                            "code": "RATE_LIMIT_EXCEEDED",
+                            "message": f"Terlalu banyak permintaan. Coba lagi dalam {retry_after} detik.",
+                        },
+                    },
+                    headers={"Retry-After": str(retry_after)},
+                )
+        except Exception as exc:
+            # Fail-open on any Redis error
+            log.warning("rate_limit_redis_error", error=str(exc))
+
+        return await call_next(request)
 
 
 # ------------------------------------------------------------------ #
@@ -190,7 +313,14 @@ def register_exception_handlers(app: FastAPI) -> None:
 def register_middleware(app: FastAPI) -> None:
     """
     Add all middleware to the FastAPI app.
-    Order matters: last-added runs first (LIFO).
+    Order matters: last-added runs first (LIFO stack).
+
+    Execution order (outermost → innermost):
+    1. CORS
+    2. SecurityHeaders
+    3. RateLimit
+    4. RequestLogging
+    5. RequestID  ← innermost, runs first
     """
     settings = get_settings()
 
@@ -199,12 +329,18 @@ def register_middleware(app: FastAPI) -> None:
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
 
-    # 2. Request logging
+    # 2. Security headers
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # 3. Rate limiting (Redis-backed, fail-open)
+    app.add_middleware(RateLimitMiddleware)
+
+    # 4. Request logging
     app.add_middleware(RequestLoggingMiddleware)
 
-    # 3. Request ID injection (innermost — runs first)
+    # 5. Request ID injection (innermost — runs first)
     app.add_middleware(RequestIDMiddleware)

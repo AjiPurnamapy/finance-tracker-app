@@ -42,6 +42,14 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8080"]
 
     # ------------------------------------------------------------------ #
+    # Redis
+    # ------------------------------------------------------------------ #
+    REDIS_URL: str = "redis://localhost:6379/0"
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_AUTH_RPM: int = 10        # requests/min on /auth endpoints
+    RATE_LIMIT_GENERAL_RPM: int = 120    # requests/min on other endpoints
+
+    # ------------------------------------------------------------------ #
     # PTS Exchange
     # ------------------------------------------------------------------ #
     DEFAULT_PTS_TO_IDR_RATE: float = 10.0   # 1000 PTS = Rp 10.000

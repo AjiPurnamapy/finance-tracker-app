@@ -47,7 +47,9 @@ def _build_token_response(
     access_token = create_access_token(
         sub=str(user.id),
         role=user.role,
-        # family_id will be added in Phase 3 when family model is ready
+        # family_id: intentionally None — JWT tidak menyimpan family context
+        # untuk menghindari stale token issue saat user berpindah family.
+        # Family context selalu di-fetch fresh dari DB per request.
         family_id=None,
     )
     return TokenResponse(

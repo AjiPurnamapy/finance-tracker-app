@@ -12,7 +12,7 @@ import structlog
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.constants import Currency
+from app.core.constants import Currency, TransactionType
 from app.core.exceptions import (
     BadRequestException,
     ForbiddenException,
@@ -20,9 +20,11 @@ from app.core.exceptions import (
     NotFoundException,
 )
 from app.models.family import FamilyMember
+from app.models.pts_exchange_rate import PtsExchangeRate
 from app.models.user import User
 from app.models.wallet import Wallet
 from app.schemas.task import WalletResponse
+from app.schemas.wallet import ExchangePtsResponse
 
 log = structlog.get_logger(__name__)
 
@@ -134,6 +136,14 @@ async def debit(
             code="INVALID_AMOUNT",
             message="Amount harus lebih dari 0.",
         )
+
+    # FIX F-14: Check wallet existence terlebih dahulu
+    wallet_exists = await db.scalar(
+        select(Wallet.id).where(Wallet.id == wallet_id)
+    )
+    if not wallet_exists:
+        raise NotFoundException(resource="Wallet")
+
     if currency == Currency.IDR:
         result = await db.execute(
             update(Wallet)
@@ -193,11 +203,7 @@ async def topup(
     MVP: no payment gateway — direct credit.
     Parent-only operation.
     """
-    from app.models.user import User as UserModel
     from app.services import transaction_service
-    from app.core.constants import TransactionType
-    from app.models.family import FamilyMember
-    from sqlalchemy import select as sa_select
 
     if user.role != "parent":
         raise ForbiddenException(
@@ -214,7 +220,7 @@ async def topup(
 
     # Get family_id for transaction record
     membership = await db.scalar(
-        sa_select(FamilyMember).where(
+        select(FamilyMember).where(
             FamilyMember.user_id == user.id,
             FamilyMember.is_active == True,  # noqa: E712
         )
@@ -257,12 +263,7 @@ async def exchange_pts(
 
     IMPORTANT: All operations within single DB transaction from get_db().
     """
-    from sqlalchemy import select as sa_select
-    from app.models.pts_exchange_rate import PtsExchangeRate
-    from app.models.family import FamilyMember
     from app.services import transaction_service
-    from app.core.constants import TransactionType
-    from app.schemas.wallet import ExchangePtsResponse
 
     if pts_amount <= 0:
         raise BadRequestException(
@@ -282,7 +283,7 @@ async def exchange_pts(
 
     # Fetch active exchange rate with row lock to prevent race conditions
     rate = await db.scalar(
-        sa_select(PtsExchangeRate).where(PtsExchangeRate.is_active == True).with_for_update()  # noqa: E712
+        select(PtsExchangeRate).where(PtsExchangeRate.is_active == True).with_for_update()  # noqa: E712
     )
     if not rate:
         raise NotFoundException(resource="PtsExchangeRate", code="NO_ACTIVE_RATE")
@@ -295,7 +296,7 @@ async def exchange_pts(
 
     # Get family for transaction record
     membership = await db.scalar(
-        sa_select(FamilyMember).where(
+        select(FamilyMember).where(
             FamilyMember.user_id == user.id,
             FamilyMember.is_active == True,  # noqa: E712
         )

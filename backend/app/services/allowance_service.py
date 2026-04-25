@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.constants import Currency, TransactionType, NotificationType
 from app.services.notification_service import create_notification as create_notif
 from app.core.exceptions import (
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     NotFoundException,
@@ -65,15 +66,13 @@ async def create_allowance(
 
     # MVP: Allowances only support IDR
     if data.currency != Currency.IDR:
-        from app.core.exceptions import BadRequestException
         raise BadRequestException(
             code="IDR_ONLY",
             message="MVP: allowance hanya mendukung IDR.",
         )
 
     # Check child is actually a child role
-    from app.models.user import User as UserModel
-    child_user = await db.get(UserModel, data.child_id)
+    child_user = await db.get(User, data.child_id)
     if not child_user or child_user.role != "child":
         raise ForbiddenException(
             code="TARGET_NOT_CHILD",
@@ -170,7 +169,11 @@ async def update_allowance(
             message="Anda bukan pemilik allowance ini.",
         )
 
+    # Capture changes for notification
     fields_sent = data.model_fields_set
+    amount_changed = "amount" in fields_sent
+    status_changed = "is_active" in fields_sent
+
     if "amount" in fields_sent and data.amount is not None:
         allowance.amount = data.amount
     if "currency" in fields_sent and data.currency is not None:
@@ -187,6 +190,20 @@ async def update_allowance(
     db.add(allowance)
     await db.flush()
     await db.refresh(allowance)
+
+    # G-2: Notify child if meaningful fields changed (amount or active status)
+    if amount_changed or status_changed:
+        await create_notif(
+            session=db,
+            user_id=allowance.child_id,
+            type=NotificationType.SYSTEM,
+            title="Allowance Diperbarui",
+            message=f"Allowance kamu telah diperbarui menjadi {allowance.amount} {allowance.currency}."
+                    if amount_changed
+                    else f"Allowance kamu telah {'diaktifkan' if allowance.is_active else 'dinonaktifkan'}.",
+            data={"allowance_id": str(allowance.id)},
+        )
+
     return AllowanceResponse.model_validate(allowance)
 
 
@@ -275,5 +292,4 @@ async def manual_transfer(
         amount=str(allowance.amount),
         currency=allowance.currency,
     )
-    from app.schemas.task import TransactionResponse
     return TransactionResponse.model_validate(tx)

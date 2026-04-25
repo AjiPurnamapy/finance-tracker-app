@@ -34,14 +34,25 @@ def get_engine():
     global _engine
     if _engine is None:
         settings = get_settings()
-        _engine = create_async_engine(
-            settings.DATABASE_URL,
-            pool_size=5,
-            max_overflow=10,
-            pool_timeout=30,
-            pool_recycle=1800,   # recycle connections every 30 min
-            echo=settings.is_development,   # log SQL queries in dev only
-        )
+        url = settings.DATABASE_URL
+
+        if url.startswith("sqlite"):
+            # SQLite: tidak support connection pool args
+            _engine = create_async_engine(
+                url,
+                connect_args={"check_same_thread": False},
+                echo=settings.is_development,
+            )
+        else:
+            # PostgreSQL: full connection pool config
+            _engine = create_async_engine(
+                url,
+                pool_size=5,
+                max_overflow=10,
+                pool_timeout=30,
+                pool_recycle=1800,   # recycle connections every 30 min
+                echo=settings.is_development,   # log SQL queries in dev only
+            )
     return _engine
 
 

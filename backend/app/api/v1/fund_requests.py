@@ -2,6 +2,7 @@
 FundRequest router — endpoints untuk sistem permintaan dana.
 """
 
+import math
 import uuid
 
 from fastapi import APIRouter, Depends, Query, status
@@ -39,7 +40,6 @@ async def list_fund_requests(
     results, total = await fund_request_service.list_requests(
         user, db, status=status, page=page, per_page=per_page
     )
-    import math
     return PaginatedResponse(
         data=results,
         meta=PaginationMeta(

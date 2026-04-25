@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import structlog
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import Currency, ExpenseCategory, TransactionType
@@ -24,6 +24,7 @@ from app.core.exceptions import (
 )
 from app.models.expense import Expense
 from app.models.family import FamilyMember
+from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.expense import (
     CreateExpenseRequest,
@@ -98,6 +99,15 @@ async def create_expense(
     db.add(expense)
     await db.flush()
     await db.refresh(expense)
+
+    # F-12: Update transaction reference_id now that expense.id is available
+    if tx_id is not None:
+        await db.execute(
+            update(Transaction)
+            .where(Transaction.id == tx_id)
+            .values(reference_id=expense.id)
+        )
+        await db.flush()
 
     log.info(
         "expense_created",

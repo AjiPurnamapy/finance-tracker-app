@@ -18,7 +18,7 @@ import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.constants import FundRequestStatus, TransactionType, NotificationType
+from app.core.constants import FamilyMemberRole, FundRequestStatus, TransactionType, NotificationType
 from app.services.notification_service import create_notification as create_notif
 from app.core.exceptions import (
     BadRequestException,
@@ -81,7 +81,7 @@ async def create_request(
     admins = await db.scalars(
         select(FamilyMember.user_id).where(
             FamilyMember.family_id == membership.family_id,
-            FamilyMember.role == "admin"
+            FamilyMember.role == FamilyMemberRole.ADMIN
         )
     )
     for admin_id in admins:

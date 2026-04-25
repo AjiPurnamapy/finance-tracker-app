@@ -14,7 +14,7 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import (
@@ -169,6 +169,17 @@ async def create_task(
     await db.flush()
     await db.refresh(task)
 
+    # G-1: Notify child that a new task has been assigned to them
+    await notification_service.create_notification(
+        session=db,
+        user_id=task.assigned_to,
+        type=NotificationType.TASK_ASSIGNED,
+        title="Task Baru Untukmu!",
+        message=f"Parent membuat task baru: '{task.title}'. "
+                f"Reward: {task.reward_amount} {task.reward_currency.value}.",
+        data={"task_id": str(task.id)},
+    )
+
     log.info(
         "task_created",
         task_id=str(task.id),
@@ -182,25 +193,38 @@ async def list_tasks(
     user: User,
     db: AsyncSession,
     status_filter: TaskStatus | None = None,
-) -> list[TaskResponse]:
+    page: int = 1,
+    per_page: int = 20,
+) -> tuple[list[TaskResponse], int]:
     """
     Parent: all tasks in their family (optionally filtered by status).
     Child: only tasks assigned to themselves.
+    Returns (tasks, total_count) untuk pagination.
     """
     membership = await _get_user_family_membership(user.id, db)
 
-    query = select(Task).where(Task.family_id == membership.family_id)
+    base_query = select(Task).where(Task.family_id == membership.family_id)
 
     if user.role == "child":
-        query = query.where(Task.assigned_to == user.id)
+        base_query = base_query.where(Task.assigned_to == user.id)
 
     if status_filter:
-        query = query.where(Task.status == status_filter)
+        base_query = base_query.where(Task.status == status_filter)
 
-    query = query.order_by(Task.created_at.desc())
-    result = await db.execute(query)
+    # Count total
+    total = await db.scalar(
+        select(func.count()).select_from(base_query.subquery())
+    ) or 0
+
+    # Paginate
+    offset = (page - 1) * per_page
+    result = await db.execute(
+        base_query.order_by(Task.created_at.desc())
+        .offset(offset)
+        .limit(per_page)
+    )
     tasks = result.scalars().all()
-    return [TaskResponse.model_validate(t) for t in tasks]
+    return [TaskResponse.model_validate(t) for t in tasks], total
 
 
 async def get_task(
@@ -258,6 +282,12 @@ async def update_task(
     if "reward_currency" in fields_sent and data.reward_currency is not None:
         task.reward_currency = data.reward_currency
     if "due_date" in fields_sent:
+        # F-10: Validate due_date is in the future (matching create_task behavior)
+        if data.due_date and data.due_date.replace(tzinfo=None) <= datetime.now(UTC).replace(tzinfo=None):
+            raise BadRequestException(
+                code="DUE_DATE_IN_PAST",
+                message="Due date harus di masa mendatang.",
+            )
         task.due_date = data.due_date  # allows clearing to None
 
     db.add(task)

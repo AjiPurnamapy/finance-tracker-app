@@ -12,7 +12,7 @@ Rules enforced here:
 import uuid
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import (
@@ -253,10 +253,8 @@ async def remove_member(
 
 async def get_active_seat_count(family_id: uuid.UUID, db: AsyncSession) -> int:
     """Return number of currently active seats in a family."""
-    from sqlalchemy import func as sqlfunc
-
     result = await db.scalar(
-        select(sqlfunc.count(FamilyMember.id)).where(
+        select(func.count(FamilyMember.id)).where(
             FamilyMember.family_id == family_id,
             FamilyMember.is_active == True,  # noqa: E712
         )

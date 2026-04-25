@@ -3,6 +3,7 @@ Common Pydantic v2 schemas shared across all endpoints.
 Provides consistent API response envelopes.
 """
 
+import math
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
@@ -63,7 +64,6 @@ class PaginationMeta(BaseModel):
 
     @classmethod
     def from_params(cls, params: PaginationParams, total: int) -> "PaginationMeta":
-        import math
         return cls(
             page=params.page,
             per_page=params.per_page,

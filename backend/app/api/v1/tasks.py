@@ -12,7 +12,9 @@ POST   /api/v1/tasks/{id}/reject   — Parent rejects
 """
 
 import uuid
+import math
 
+from app.schemas.common import PaginatedResponse, PaginationMeta
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,18 +44,31 @@ async def create_task(
     return SuccessResponse(data=task)
 
 
+
 @router.get(
     "/",
-    response_model=SuccessResponse[list[TaskResponse]],
+    response_model=PaginatedResponse[TaskResponse],
     summary="Lihat daftar task",
 )
 async def list_tasks(
     status: TaskStatus | None = Query(default=None, description="Filter by status"),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    tasks = await task_service.list_tasks(current_user, db, status_filter=status)
-    return SuccessResponse(data=tasks)
+    tasks, total = await task_service.list_tasks(
+        current_user, db, status_filter=status, page=page, per_page=per_page
+    )
+    return PaginatedResponse(
+        data=tasks,
+        meta=PaginationMeta(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=math.ceil(total / per_page) if total else 0,
+        ),
+    )
 
 
 @router.get(

@@ -138,6 +138,7 @@ SUBSCRIPTION_MAX_SEATS: dict[SubscriptionTier, int] = {
 # ------------------------------------------------------------------ #
 
 class NotificationType(str, Enum):
+    TASK_ASSIGNED = "task_assigned"
     TASK_APPROVED = "task_approved"
     TASK_REJECTED = "task_rejected"
     TASK_SUBMITTED = "task_submitted"

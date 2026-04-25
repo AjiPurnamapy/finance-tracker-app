@@ -1,8 +1,8 @@
 """
 Savings Goal service — create, update, contribute, delete goals.
 
-Contributions use atomic SQL UPDATE to prevent race conditions
-on concurrent requests (same pattern as wallet_service).
+Contributions use SELECT FOR UPDATE + atomic SQL UPDATE to prevent
+race conditions on concurrent requests.
 """
 
 import uuid
@@ -101,32 +101,43 @@ async def update_goal(
 async def contribute(
     goal_id: uuid.UUID, user: User, amount: Decimal, db: AsyncSession
 ) -> SavingsGoalResponse:
-    goal = await _get_goal_or_404(goal_id, user.id, db)
+    # F-1: Use SELECT FOR UPDATE to lock row and prevent race condition
+    # on milestone notification (prevents duplicate notifications from concurrent requests).
+    # NOTE: FOR UPDATE is a no-op on SQLite but works correctly on PostgreSQL.
+    result = await db.execute(
+        select(SavingsGoal)
+        .where(SavingsGoal.id == goal_id, SavingsGoal.user_id == user.id)
+        .with_for_update()
+    )
+    goal = result.scalar_one_or_none()
+    if not goal:
+        raise NotFoundException(resource="Savings Goal")
 
     if goal.is_completed:
         raise BadRequestException(code="GOAL_COMPLETED", message="Goal ini sudah tercapai.")
 
     if amount <= 0:
-         raise BadRequestException(code="INVALID_AMOUNT", message="Amount harus lebih besar dari 0.")
+        raise BadRequestException(code="INVALID_AMOUNT", message="Amount harus lebih besar dari 0.")
 
-    # M-2: Cap single contribution
+    # Cap single contribution
     if amount > Decimal("10000000"):
         raise BadRequestException(code="AMOUNT_TOO_LARGE", message="Maksimal kontribusi per transaksi adalah Rp 10.000.000.")
 
-    # Get user's wallet
-    wallet = await wallet_service.get_wallet(user, db)
+    # F-8: Use get_wallet_by_user_id (returns ORM model, not Pydantic schema)
+    wallet = await wallet_service.get_wallet_by_user_id(user.id, db)
 
-    # Debit wallet (this handles optimistic locking and insufficient balance)
+    # Debit wallet (handles optimistic locking and insufficient balance)
     await wallet_service.debit(wallet_id=wallet.id, amount=amount, currency=Currency.IDR, db=db)
 
-    # Calculate milestone percentages BEFORE update
-    old_percentage = (goal.current_amount / goal.target_amount) * 100
+    # F-1: Calculate milestone percentages with Decimal precision (not float)
+    target = Decimal(str(goal.target_amount))
+    current = Decimal(str(goal.current_amount))
+    old_percentage = (current / target) * 100
 
-    # H-2: Atomic UPDATE to prevent race conditions on concurrent contributions
-    new_current = goal.current_amount + amount
-    is_now_completed = new_current >= goal.target_amount
+    new_current = current + amount
+    is_now_completed = new_current >= target
     if is_now_completed:
-        new_current = goal.target_amount
+        new_current = target
 
     await db.execute(
         update(SavingsGoal)
@@ -141,7 +152,7 @@ async def contribute(
     await db.refresh(goal)
 
     # Calculate new percentage for milestone check
-    new_percentage = (goal.current_amount / goal.target_amount) * 100
+    new_percentage = (Decimal(str(goal.current_amount)) / target) * 100
 
     # Check milestones and notify
     milestones = [25, 50, 75, 100]
@@ -152,7 +163,8 @@ async def contribute(
                 user_id=user.id,
                 type=NotificationType.GOAL_MILESTONE,
                 title="Pencapaian Tabungan!",
-                message=f"Tabungan '{goal.name}' sudah mencapai {milestone}%!" if milestone < 100 else f"Hore! Tabungan '{goal.name}' sudah terpenuhi 100%!",
+                message=f"Tabungan '{goal.name}' sudah mencapai {milestone}%!" if milestone < 100
+                        else f"Hore! Tabungan '{goal.name}' sudah terpenuhi 100%!",
                 data={"goal_id": str(goal.id), "milestone": milestone}
             )
 
@@ -170,9 +182,10 @@ async def contribute(
 async def delete_goal(goal_id: uuid.UUID, user: User, db: AsyncSession) -> None:
     goal = await _get_goal_or_404(goal_id, user.id, db)
 
-    # L-2: Refund if not empty — with transaction record for audit trail
+    # Refund if not empty — with transaction record for audit trail
     if goal.current_amount > 0:
-        wallet = await wallet_service.get_wallet(user, db)
+        # F-9: Use get_wallet_by_user_id (returns ORM model, not Pydantic schema)
+        wallet = await wallet_service.get_wallet_by_user_id(user.id, db)
         await wallet_service.credit(wallet_id=wallet.id, amount=goal.current_amount, currency=Currency.IDR, db=db)
 
         # Record refund transaction for financial audit trail

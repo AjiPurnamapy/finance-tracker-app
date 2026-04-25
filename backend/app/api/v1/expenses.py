@@ -2,6 +2,7 @@
 Expense router — endpoints untuk pencatatan pengeluaran.
 """
 
+import math
 import uuid
 
 from fastapi import APIRouter, Depends, Query, status
@@ -53,7 +54,6 @@ async def list_expenses(
     results, total = await expense_service.list_expenses(
         user, db, category=category, page=page, per_page=per_page
     )
-    import math
     return PaginatedResponse(
         data=results,
         meta=PaginationMeta(

@@ -12,7 +12,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import FamilyMemberRole, InvitationStatus
@@ -88,10 +88,8 @@ async def create_invitation(
         raise SeatLimitException()
 
     # H2: Check pending invitation limit
-    from sqlalchemy import func as sqlfunc
-
     pending_count = await db.scalar(
-        select(sqlfunc.count(Invitation.id)).where(
+        select(func.count(Invitation.id)).where(
             Invitation.family_id == family.id,
             Invitation.status == InvitationStatus.SENT,
         )

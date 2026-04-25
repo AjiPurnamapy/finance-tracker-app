@@ -87,7 +87,7 @@ async def mark_read(session: AsyncSession, user_id: uuid.UUID, notification_id: 
     notification = result.scalar_one_or_none()
 
     if not notification:
-        raise NotFoundException(code="NOTIFICATION_NOT_FOUND", message="Notification not found")
+        raise NotFoundException(resource="Notification", code="NOTIFICATION_NOT_FOUND")
 
     notification.is_read = True
     await session.flush()

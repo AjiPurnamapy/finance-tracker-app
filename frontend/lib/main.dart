@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/repositories/auth_repository.dart';
 import 'ui/core/router/app_router.dart';
 import 'ui/core/themes/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   // Use path URL strategy for web (removes the '#' from the URL).
   usePathUrlStrategy();
+  
+  final prefs = await SharedPreferences.getInstance();
 
   runApp(
-    const ProviderScope(
-      child: FinanceTrackerApp(),
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const FinanceTrackerApp(),
     ),
   );
 }

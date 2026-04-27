@@ -1,0 +1,341 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../view_models/auth_view_model.dart';
+import '../../../../data/services/api_client.dart';
+
+class RegisterView extends ConsumerStatefulWidget {
+  final String? preselectedRole;
+  const RegisterView({super.key, this.preselectedRole});
+
+  @override
+  ConsumerState<RegisterView> createState() => _RegisterViewState();
+}
+
+class _RegisterViewState extends ConsumerState<RegisterView>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..forward();
+    _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+    try {
+      // Register without role — role will be set on the next screen
+      await ref.read(authViewModelProvider.notifier).register(
+            _emailController.text.trim(),
+            _passwordController.text,
+            _fullNameController.text.trim(),
+            // Default role "parent" for initial registration; overridden after role selection
+            role: 'parent',
+          );
+      // After register + auto-login, redirect to role selection
+      if (mounted) {
+        context.go('/role-selection');
+      }
+    } on ApiException catch (e) {
+      if (mounted) _showError(e.message);
+    } catch (e) {
+      if (mounted) _showError('Terjadi kesalahan: $e');
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF2A1A1A),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = ref.watch(authViewModelProvider).isLoading;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D1117),
+      body: FadeTransition(
+        opacity: _fadeAnim,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  // Back button
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1F2E),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF2A2F3E)),
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Create account',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Join and start managing your family finances',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  _DarkTextField(
+                    controller: _fullNameController,
+                    label: 'Full name',
+                    hint: 'John Doe',
+                    prefixIcon: Icons.person_outline_rounded,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Nama tidak boleh kosong' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _DarkTextField(
+                    controller: _emailController,
+                    label: 'Email address',
+                    hint: 'you@example.com',
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: Icons.email_outlined,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Email tidak boleh kosong';
+                      if (!v.contains('@')) return 'Format email tidak valid';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _DarkTextField(
+                    controller: _passwordController,
+                    label: 'Password',
+                    hint: 'Min. 8 karakter',
+                    obscureText: _obscurePassword,
+                    prefixIcon: Icons.lock_outline_rounded,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: Colors.white.withValues(alpha: 0.4),
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Password tidak boleh kosong';
+                      if (v.length < 8) return 'Password minimal 8 karakter';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  // Password hint
+                  Text(
+                    'Must contain at least 1 uppercase letter and 1 number.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: FilledButton(
+                      onPressed: isLoading ? null : _register,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF137FEC),
+                        disabledBackgroundColor:
+                            const Color(0xFF137FEC).withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Create Account',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => context.pop(),
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                          children: const [
+                            TextSpan(text: 'Already have an account? '),
+                            TextSpan(
+                              text: 'Sign in',
+                              style: TextStyle(
+                                color: Color(0xFF137FEC),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Reusable dark text field ──────────────────────────────────────────────────
+
+class _DarkTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final TextInputType keyboardType;
+  final bool obscureText;
+  final IconData prefixIcon;
+  final Widget? suffixIcon;
+  final String? Function(String?)? validator;
+
+  const _DarkTextField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.keyboardType = TextInputType.text,
+    this.obscureText = false,
+    required this.prefixIcon,
+    this.suffixIcon,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          validator: validator,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.white.withValues(alpha: 0.25),
+              fontSize: 15,
+            ),
+            prefixIcon: Icon(prefixIcon,
+                color: Colors.white.withValues(alpha: 0.35), size: 20),
+            suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: const Color(0xFF1A1F2E),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF2A2F3E)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF2A2F3E)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xFF137FEC), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE53E3E)),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xFFE53E3E), width: 1.5),
+            ),
+            errorStyle: const TextStyle(color: Color(0xFFFC8181)),
+          ),
+        ),
+      ],
+    );
+  }
+}

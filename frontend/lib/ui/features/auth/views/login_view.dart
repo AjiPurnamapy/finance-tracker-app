@@ -20,6 +20,7 @@ class _LoginViewState extends ConsumerState<LoginView>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
 
@@ -44,6 +45,7 @@ class _LoginViewState extends ConsumerState<LoginView>
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
     try {
       await ref.read(authViewModelProvider.notifier).login(
             _emailController.text.trim(),
@@ -57,6 +59,8 @@ class _LoginViewState extends ConsumerState<LoginView>
       if (mounted) {
         _showError('Terjadi kesalahan: $e');
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -73,7 +77,6 @@ class _LoginViewState extends ConsumerState<LoginView>
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authViewModelProvider).isLoading;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117),
@@ -170,7 +173,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                     width: double.infinity,
                     height: 56,
                     child: FilledButton(
-                      onPressed: isLoading ? null : _login,
+                      onPressed: _isLoading ? null : _login,
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF137FEC),
                         disabledBackgroundColor:
@@ -179,7 +182,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: isLoading
+                      child: _isLoading
                           ? const SizedBox(
                               width: 20,
                               height: 20,

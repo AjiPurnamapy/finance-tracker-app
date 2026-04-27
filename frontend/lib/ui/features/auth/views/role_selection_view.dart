@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../view_models/auth_view_model.dart';
+
 class RoleSelectionView extends ConsumerStatefulWidget {
   const RoleSelectionView({super.key});
 
@@ -18,13 +20,24 @@ class _RoleSelectionViewState extends ConsumerState<RoleSelectionView> {
     setState(() => _isLoading = true);
 
     try {
-      // Navigate to the correct dashboard based on role selected
+      // Save role to backend via PATCH /users/me
+      await ref.read(authViewModelProvider.notifier).updateRole(_selectedRole!);
+
       if (mounted) {
-        if (_selectedRole == 'child') {
-          context.go('/child/dashboard');
-        } else {
-          context.go('/parent/dashboard');
-        }
+        context.go(
+            _selectedRole == 'child' ? '/child/dashboard' : '/parent/dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan role: $e'),
+            backgroundColor: const Color(0xFF2A1A1A),
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

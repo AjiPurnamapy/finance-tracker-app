@@ -23,8 +23,8 @@ class AuthRepository {
     final response = await _apiClient.post('/auth/login', body: {
       'email': email,
       'password': password,
-    });
-    
+    }, requiresAuth: false);
+
     final tokenResponse = TokenResponse.fromJson(response);
     await _saveTokens(tokenResponse.accessToken, tokenResponse.refreshToken);
   }
@@ -35,28 +35,33 @@ class AuthRepository {
       'password': password,
       'full_name': fullName,
       'role': role,
-    });
+    }, requiresAuth: false);
   }
 
   Future<User> getCurrentUser() async {
-    final token = _prefs.getString(_accessTokenKey);
-    if (token == null) {
+    if (!hasToken) {
       throw ApiException(401, 'No token found locally');
     }
-    
-    final response = await _apiClient.get('/users/me', token: token);
+    final response = await _apiClient.get('/users/me');
+    return User.fromJson(response);
+  }
+
+  /// Update the user's role via PATCH /users/me
+  Future<User> updateRole(String role) async {
+    final response = await _apiClient.patch('/users/me', body: {
+      'role': role,
+    });
     return User.fromJson(response);
   }
 
   Future<void> logout() async {
     final refreshToken = _prefs.getString(_refreshTokenKey);
-    final accessToken = _prefs.getString(_accessTokenKey);
-    
-    if (refreshToken != null && accessToken != null) {
+
+    if (refreshToken != null && hasToken) {
       try {
         await _apiClient.post('/auth/logout', body: {
           'refresh_token': refreshToken,
-        }, token: accessToken);
+        });
       } catch (_) {
         // We still want to clear local tokens even if the server request fails.
       }

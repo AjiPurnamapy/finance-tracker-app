@@ -27,3 +27,4 @@ class UserResponse(BaseModel):
 class UpdateUserRequest(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=100)
     avatar_url: AnyHttpUrl | None = Field(default=None)
+    role: UserRole | None = Field(default=None)

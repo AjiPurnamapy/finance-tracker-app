@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../data/models/user_model.dart';
-import '../../../../data/repositories/auth_repository.dart';
 import '../../features/auth/view_models/auth_view_model.dart';
 import '../../features/auth/views/login_view.dart';
 import '../../features/auth/views/register_view.dart';
@@ -15,18 +14,17 @@ import '../../features/wallet/views/wallet_view.dart';
 import '../../features/splash/views/splash_view.dart';
 import 'parent_shell.dart' show ParentShell, ChildShell;
 
-
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 // Parent branch keys
 final _parentDashboardKey = GlobalKey<NavigatorState>(debugLabel: 'parentDash');
-final _parentTasksKey     = GlobalKey<NavigatorState>(debugLabel: 'parentTasks');
-final _parentWalletKey    = GlobalKey<NavigatorState>(debugLabel: 'parentWallet');
+final _parentTasksKey = GlobalKey<NavigatorState>(debugLabel: 'parentTasks');
+final _parentWalletKey = GlobalKey<NavigatorState>(debugLabel: 'parentWallet');
 
 // Child branch keys
-final _childDashboardKey  = GlobalKey<NavigatorState>(debugLabel: 'childDash');
-final _childTasksKey      = GlobalKey<NavigatorState>(debugLabel: 'childTasks');
-final _childWalletKey     = GlobalKey<NavigatorState>(debugLabel: 'childWallet');
+final _childDashboardKey = GlobalKey<NavigatorState>(debugLabel: 'childDash');
+final _childTasksKey = GlobalKey<NavigatorState>(debugLabel: 'childTasks');
+final _childWalletKey = GlobalKey<NavigatorState>(debugLabel: 'childWallet');
 
 const _publicRoutes = {'/splash', '/login', '/register', '/role-selection'};
 
@@ -40,7 +38,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: notifier,
     redirect: (context, state) {
       final authState = notifier.value;
-      final location  = state.matchedLocation;
+      final location = state.matchedLocation;
 
       // Always let splash play
       if (location == '/splash') return null;
@@ -50,17 +48,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      final isAuth   = ref.read(authRepositoryProvider).hasToken;
+      // H-3 FIX: Use authViewModel state (server-verified), not just local hasToken
+      final user = authState.value;
+      final isAuthenticated = user != null;
       final isPublic = _publicRoutes.contains(location);
 
       // Not authenticated → go to login
-      if (!isAuth && !isPublic) return '/login';
+      if (!isAuthenticated && !isPublic) return '/login';
 
       // Already authenticated → skip login/register, but ALLOW role-selection
-      // (needed right after register before user picks role)
-      if (isAuth && (location == '/login' || location == '/register')) {
-        final user = authState.value;
-        return _homeForRole(user?.role);
+      if (isAuthenticated &&
+          (location == '/login' || location == '/register')) {
+        return _homeForRole(user.role);
       }
 
       return null;
@@ -69,31 +68,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // ── Public ─────────────────────────────────────────────────────
       GoRoute(
         path: '/splash',
-                builder: (context, state) => const SplashView(),
+        builder: (context, state) => const SplashView(),
       ),
       GoRoute(
         path: '/login',
-                builder: (context, state) => const LoginView(),
+        builder: (context, state) => const LoginView(),
       ),
       GoRoute(
         path: '/register',
-                builder: (context, state) => const RegisterView(),
+        builder: (context, state) => const RegisterView(),
       ),
       GoRoute(
         path: '/role-selection',
-                builder: (context, state) => const RoleSelectionView(),
+        builder: (context, state) => const RoleSelectionView(),
       ),
 
       // ── Parent Shell ────────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => ParentShell(navigationShell: shell),
+        builder: (context, state, shell) =>
+            ParentShell(navigationShell: shell),
         branches: [
           StatefulShellBranch(
             navigatorKey: _parentDashboardKey,
             routes: [
               GoRoute(
                 path: '/parent/dashboard',
-                  builder: (context, state) => const ParentDashboardView(),
+                builder: (context, state) => const ParentDashboardView(),
               ),
             ],
           ),
@@ -102,7 +102,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/parent/tasks',
-                  builder: (context, state) => const TasksView(),
+                builder: (context, state) => const TasksView(),
               ),
             ],
           ),
@@ -111,7 +111,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/parent/wallet',
-                  builder: (context, state) => const WalletView(),
+                builder: (context, state) => const WalletView(),
               ),
             ],
           ),
@@ -120,14 +120,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // ── Child Shell ─────────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => ChildShell(navigationShell: shell),
+        builder: (context, state, shell) =>
+            ChildShell(navigationShell: shell),
         branches: [
           StatefulShellBranch(
             navigatorKey: _childDashboardKey,
             routes: [
               GoRoute(
                 path: '/child/dashboard',
-                  builder: (context, state) => const ChildDashboardView(),
+                builder: (context, state) => const ChildDashboardView(),
               ),
             ],
           ),
@@ -136,7 +137,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/child/tasks',
-                  builder: (context, state) => const TasksView(),
+                builder: (context, state) => const TasksView(),
               ),
             ],
           ),
@@ -145,7 +146,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/child/wallet',
-                  builder: (context, state) => const WalletView(),
+                builder: (context, state) => const WalletView(),
               ),
             ],
           ),

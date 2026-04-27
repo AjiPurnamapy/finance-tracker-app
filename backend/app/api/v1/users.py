@@ -42,6 +42,8 @@ async def update_me(
         current_user.full_name = body.full_name.strip()
     if body.avatar_url is not None:
         current_user.avatar_url = str(body.avatar_url)
+    if body.role is not None:
+        current_user.role = body.role
 
     db.add(current_user)
     await db.flush()

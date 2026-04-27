@@ -173,6 +173,12 @@ class _RegisterViewState extends ConsumerState<RegisterView>
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Password tidak boleh kosong';
                       if (v.length < 8) return 'Password minimal 8 karakter';
+                      if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                        return 'Harus mengandung minimal 1 huruf besar';
+                      }
+                      if (!RegExp(r'[0-9]').hasMatch(v)) {
+                        return 'Harus mengandung minimal 1 angka';
+                      }
                       return null;
                     },
                   ),

@@ -19,7 +19,7 @@ class AuthViewModel extends AsyncNotifier<User?> {
         final user = await _repository.getCurrentUser();
         return user;
       } on ApiException catch (e) {
-        // Token is invalid or expired
+        // Token is invalid or expired (and refresh also failed)
         if (e.statusCode == 401) {
           await _repository.logout();
           return null;
@@ -57,6 +57,27 @@ class AuthViewModel extends AsyncNotifier<User?> {
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
       rethrow;
+    }
+  }
+
+  /// Update user's role and refresh user state
+  Future<void> updateRole(String role) async {
+    try {
+      final updatedUser = await _repository.updateRole(role);
+      state = AsyncValue.data(updatedUser);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Re-fetch user from backend and update state
+  Future<void> refreshUser() async {
+    try {
+      final user = await _repository.getCurrentUser();
+      state = AsyncValue.data(user);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
     }
   }
 

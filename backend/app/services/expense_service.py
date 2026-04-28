@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import Currency, ExpenseCategory, TransactionType
 from app.core.exceptions import (
+    BadRequestException,
     ForbiddenException,
     NotFoundException,
 )
@@ -54,6 +55,28 @@ async def create_expense(
     spent_at = data.spent_at or datetime.now(UTC)
     wallet_id: uuid.UUID | None = None
     tx_id: uuid.UUID | None = None
+
+    # CVE-10 FIX: Hourly rate limit for wallet-deducting expenses.
+    # Prevents a compromised account from draining wallet balance
+    # via rapid-fire expense creation.
+    if data.deduct_from_wallet:
+        from datetime import timedelta
+
+        MAX_HOURLY_EXPENSE = Decimal("5000000")  # Rp 5 juta per jam
+        one_hour_ago = datetime.now(UTC) - timedelta(hours=1)
+        hourly_total = await db.scalar(
+            select(func.sum(Expense.amount)).where(
+                Expense.user_id == user.id,
+                Expense.deduct_from_wallet == True,  # noqa: E712
+                Expense.created_at >= one_hour_ago,
+            )
+        ) or Decimal("0")
+
+        if hourly_total + data.amount > MAX_HOURLY_EXPENSE:
+            raise BadRequestException(
+                code="HOURLY_LIMIT_EXCEEDED",
+                message="Batas pengeluaran per jam terlampaui (maks Rp 5.000.000).",
+            )
 
     if data.deduct_from_wallet:
         # Debit user's wallet

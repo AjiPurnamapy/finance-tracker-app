@@ -38,6 +38,13 @@ from app.schemas.auth import (
 
 log = structlog.get_logger(__name__)
 
+# CVE-3 FIX: Pre-compute dummy Argon2 hash at module load time.
+# Previously, hash_password("dummy") was called on every failed login,
+# creating a new Argon2 hash each time. This introduced a subtle timing
+# difference vs. verifying an existing hash, which a sophisticated
+# attacker could exploit for user enumeration.
+_TIMING_DUMMY_HASH = hash_password("__timing_attack_protection_dummy__")
+
 
 def _build_token_response(
     user: User,
@@ -119,10 +126,10 @@ async def login(
         select(User).where(User.email == data.email.lower())
     )
     if not user:
-        # K-1 FIX: Burn time with a dummy hash to prevent timing-based
-        # user enumeration. Without this, "email not found" returns in ~1ms
-        # vs ~200ms for "wrong password", leaking email existence.
-        verify_password("dummy", hash_password("dummy"))
+        # CVE-3 FIX: Use pre-computed hash to eliminate timing side-channel.
+        # verify_password always runs against a real Argon2 hash, matching
+        # the timing of a genuine "wrong password" verification.
+        verify_password("__timing_attack_protection_dummy__", _TIMING_DUMMY_HASH)
         log.warning("login_failed_user_not_found", email=data.email)
         raise _invalid
 

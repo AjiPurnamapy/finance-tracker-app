@@ -15,15 +15,24 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from app.config import get_settings
 from app.models.base import Base  # noqa: F401 — must import Base
 
-# Import all models so their metadata is registered with Base
+# Import ALL models so their metadata is registered with Base.
+# IMPORTANT: Every model file must be imported here — if a model is missing,
+# Alembic autogenerate will generate DROP TABLE migrations for those tables.
 from app.models.user import User  # noqa: F401
 from app.models.refresh_token import RefreshToken  # noqa: F401
 from app.models.family import Family, FamilyMember  # noqa: F401
 from app.models.invitation import Invitation  # noqa: F401
-# Phase 4
 from app.models.wallet import Wallet  # noqa: F401
 from app.models.task import Task  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401
+# Phase 5+
+from app.models.allowance import Allowance  # noqa: F401
+from app.models.expense import Expense  # noqa: F401
+from app.models.fund_request import FundRequest  # noqa: F401
+from app.models.notification import Notification  # noqa: F401
+from app.models.pts_exchange_rate import PtsExchangeRate  # noqa: F401
+from app.models.savings_goal import SavingsGoal  # noqa: F401
+from app.models.subscription import Subscription  # noqa: F401
 
 # ------------------------------------------------------------------ #
 # Alembic config

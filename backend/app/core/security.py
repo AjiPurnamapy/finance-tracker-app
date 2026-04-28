@@ -105,12 +105,20 @@ def decode_access_token(token: str) -> dict:
     """
     Decode and validate a JWT access token.
     Raises JWTError if the token is invalid or expired.
+
+    CVE-1 FIX: Algorithm is hardcoded to HS256 to prevent algorithm
+    confusion attacks (e.g. attacker switching to 'none' or RS256).
+    Required claims are enforced to reject malformed tokens early.
     """
     settings = get_settings()
     return jwt.decode(
         token,
         settings.SECRET_KEY,
-        algorithms=[settings.JWT_ALGORITHM],
+        algorithms=["HS256"],  # hardcode — never read from config
+        options={
+            "verify_aud": False,
+            "require": ["exp", "iat", "sub", "jti"],
+        },
     )
 
 

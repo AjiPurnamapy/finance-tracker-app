@@ -184,7 +184,13 @@ async def approve_request(
             message="Hanya parent yang bisa menyetujui fund request.",
         )
 
-    fund_request = await db.get(FundRequest, request_id)
+    # CVE-2 FIX: Use SELECT ... FOR UPDATE to prevent concurrent
+    # double-approval race condition on the same fund request.
+    fund_request = await db.scalar(
+        select(FundRequest)
+        .where(FundRequest.id == request_id)
+        .with_for_update()
+    )
     if not fund_request:
         raise NotFoundException(resource="FundRequest")
 
@@ -283,7 +289,13 @@ async def reject_request(
             message="Hanya parent yang bisa menolak fund request.",
         )
 
-    fund_request = await db.get(FundRequest, request_id)
+    # CVE-2 FIX: Use SELECT ... FOR UPDATE to prevent concurrent
+    # double-rejection race condition on the same fund request.
+    fund_request = await db.scalar(
+        select(FundRequest)
+        .where(FundRequest.id == request_id)
+        .with_for_update()
+    )
     if not fund_request:
         raise NotFoundException(resource="FundRequest")
 

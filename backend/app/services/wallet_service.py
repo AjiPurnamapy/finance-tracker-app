@@ -6,7 +6,7 @@ to prevent race conditions without explicit transactions locks.
 """
 
 import uuid
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 
 import structlog
 from sqlalchemy import select, update
@@ -288,8 +288,25 @@ async def exchange_pts(
     if not rate:
         raise NotFoundException(resource="PtsExchangeRate", code="NO_ACTIVE_RATE")
 
-    # Calculate IDR equivalent
-    idr_credited = (pts_amount / rate.pts_amount) * rate.idr_amount
+    # CVE-5 + CVE-6 FIX: Hard cap on exchange rate + decimal precision.
+    # - quantize(ROUND_DOWN) prevents infinite decimal precision exploits
+    # - Hard cap detects compromised/manipulated exchange rates in DB
+    MAX_IDR_PER_PTS = Decimal("100")  # absolute max: Rp 100 per 1 PTS
+
+    idr_credited = (pts_amount / rate.pts_amount * rate.idr_amount).quantize(
+        Decimal("0.01"), rounding=ROUND_DOWN
+    )
+
+    if idr_credited / pts_amount > MAX_IDR_PER_PTS:
+        log.critical(
+            "SUSPICIOUS_EXCHANGE_RATE",
+            rate_id=str(rate.id),
+            computed_ratio=str(idr_credited / pts_amount),
+        )
+        raise BadRequestException(
+            code="INVALID_RATE",
+            message="Exchange rate tidak valid. Hubungi administrator.",
+        )
 
     # Get user wallet
     wallet = await _get_wallet_or_404(user.id, db)

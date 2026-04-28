@@ -42,8 +42,8 @@ async def update_me(
         current_user.full_name = body.full_name.strip()
     if body.avatar_url is not None:
         current_user.avatar_url = str(body.avatar_url)
-    if body.role is not None:
-        current_user.role = body.role
+    # NOTE: role update is intentionally not handled here.
+    # Self-service role change would be a privilege escalation vulnerability.
 
     db.add(current_user)
     await db.flush()

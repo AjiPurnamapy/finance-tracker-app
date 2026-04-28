@@ -1,5 +1,10 @@
 """
 User-related Pydantic v2 schemas.
+
+Security note:
+- UpdateUserRequest intentionally does NOT include `role`.
+  Role changes are a privileged operation and must never be
+  exposed via the public self-service PATCH /users/me endpoint.
 """
 
 import uuid
@@ -25,6 +30,9 @@ class UserResponse(BaseModel):
 
 
 class UpdateUserRequest(BaseModel):
+    """Self-service profile update — only non-privileged fields allowed."""
     full_name: str | None = Field(default=None, min_length=2, max_length=100)
     avatar_url: AnyHttpUrl | None = Field(default=None)
-    role: UserRole | None = Field(default=None)
+    # NOTE: `role` is intentionally excluded.
+    # Exposing role here allows any user to self-upgrade (child → parent).
+    # Role assignment is reserved for admin/system operations only.

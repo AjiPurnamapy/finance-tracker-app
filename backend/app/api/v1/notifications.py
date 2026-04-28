@@ -1,22 +1,22 @@
-"""
-Notifications router — endpoints untuk notifikasi pengguna.
-"""
-
+import math
 import uuid
-from typing import List
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_db
 from app.models.user import User
-from app.schemas.notification import NotificationResponse
+from app.schemas.notification import (
+    NotificationResponse,
+    NotificationPaginationMeta,
+    PaginatedNotificationResponse,
+)
 from app.services import notification_service
 
 router = APIRouter()
 
 
-@router.get("", response_model=List[NotificationResponse])
+@router.get("", response_model=PaginatedNotificationResponse)
 async def list_notifications(
     page: int = Query(1, ge=1, description="Nomor halaman"),
     per_page: int = Query(20, ge=1, le=100, description="Jumlah item per halaman"),
@@ -26,7 +26,16 @@ async def list_notifications(
     items, total = await notification_service.list_notifications(
         db, current_user.id, page=page, per_page=per_page
     )
-    return items
+    total_pages = math.ceil(total / per_page) if total > 0 else 0
+    return PaginatedNotificationResponse(
+        data=[NotificationResponse.model_validate(n) for n in items],
+        meta=NotificationPaginationMeta(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=total_pages,
+        ),
+    )
 
 
 @router.get("/unread-count", response_model=dict)

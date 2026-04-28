@@ -18,3 +18,18 @@ class NotificationResponse(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationPaginationMeta(BaseModel):
+    page: int
+    per_page: int
+    total: int
+    total_pages: int
+
+
+class PaginatedNotificationResponse(BaseModel):
+    """Paginated wrapper for notification list endpoints."""
+    success: bool = True
+    data: list[NotificationResponse]
+    meta: NotificationPaginationMeta
+

@@ -8,7 +8,11 @@ import '../../features/auth/views/login_view.dart';
 import '../../features/auth/views/register_view.dart';
 import '../../features/auth/views/role_selection_view.dart';
 import '../../features/dashboard/views/parent_dashboard_view.dart';
-import '../../features/dashboard/views/child_dashboard_view.dart';
+import '../../features/dashboard/views/child_home_view.dart';
+import '../../features/savings/views/child_savings_view.dart';
+import '../../features/wallet/views/child_wallet_view.dart';
+import '../../features/scan/views/scan_view.dart';
+import '../../features/family/views/child_family_view.dart';
 import '../../features/tasks/views/tasks_view.dart';
 import '../../features/wallet/views/wallet_view.dart';
 import '../../features/splash/views/splash_view.dart';
@@ -22,9 +26,11 @@ final _parentTasksKey = GlobalKey<NavigatorState>(debugLabel: 'parentTasks');
 final _parentWalletKey = GlobalKey<NavigatorState>(debugLabel: 'parentWallet');
 
 // Child branch keys
-final _childDashboardKey = GlobalKey<NavigatorState>(debugLabel: 'childDash');
-final _childTasksKey = GlobalKey<NavigatorState>(debugLabel: 'childTasks');
-final _childWalletKey = GlobalKey<NavigatorState>(debugLabel: 'childWallet');
+final _childHomeKey    = GlobalKey<NavigatorState>(debugLabel: 'childHome');
+final _childSavingsKey = GlobalKey<NavigatorState>(debugLabel: 'childSavings');
+final _childWalletKey  = GlobalKey<NavigatorState>(debugLabel: 'childWallet');
+final _childScanKey    = GlobalKey<NavigatorState>(debugLabel: 'childScan');
+final _childFamilyKey  = GlobalKey<NavigatorState>(debugLabel: 'childFamily');
 
 const _publicRoutes = {'/splash', '/login', '/register', '/role-selection'};
 
@@ -56,9 +62,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Not authenticated → go to login
       if (!isAuthenticated && !isPublic) return '/login';
 
-      // Already authenticated → skip login/register, but ALLOW role-selection
+      // Already authenticated → skip login/register/role-selection
       if (isAuthenticated &&
-          (location == '/login' || location == '/register')) {
+          (location == '/login' ||
+           location == '/register' ||
+           location == '/role-selection')) {
         return _homeForRole(user.role);
       }
 
@@ -76,7 +84,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterView(),
+        builder: (context, state) => RegisterView(
+          preselectedRole: state.uri.queryParameters['role'],
+        ),
       ),
       GoRoute(
         path: '/role-selection',
@@ -124,20 +134,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ChildShell(navigationShell: shell),
         branches: [
           StatefulShellBranch(
-            navigatorKey: _childDashboardKey,
+            navigatorKey: _childHomeKey,
             routes: [
               GoRoute(
-                path: '/child/dashboard',
-                builder: (context, state) => const ChildDashboardView(),
+                path: '/child/home',
+                builder: (context, state) => const ChildHomeView(),
               ),
             ],
           ),
           StatefulShellBranch(
-            navigatorKey: _childTasksKey,
+            navigatorKey: _childSavingsKey,
             routes: [
               GoRoute(
-                path: '/child/tasks',
-                builder: (context, state) => const TasksView(),
+                path: '/child/savings',
+                builder: (context, state) => const ChildSavingsView(),
               ),
             ],
           ),
@@ -146,7 +156,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/child/wallet',
-                builder: (context, state) => const WalletView(),
+                builder: (context, state) => const ChildWalletView(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _childScanKey,
+            routes: [
+              GoRoute(
+                path: '/child/scan',
+                builder: (context, state) => const ScanView(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _childFamilyKey,
+            routes: [
+              GoRoute(
+                path: '/child/family',
+                builder: (context, state) => const ChildFamilyView(),
               ),
             ],
           ),
@@ -157,6 +185,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 String _homeForRole(String? role) {
-  if (role == 'child') return '/child/dashboard';
+  if (role?.trim().toLowerCase() == 'child') return '/child/home';
   return '/parent/dashboard';
 }

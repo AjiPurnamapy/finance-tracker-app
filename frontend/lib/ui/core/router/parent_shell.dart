@@ -46,9 +46,11 @@ class ChildShell extends StatelessWidget {
         currentIndex: navigationShell.currentIndex,
         onTap: _onTap,
         items: const [
-          _NavItem(icon: Icons.home_rounded,         label: 'Home'),
-          _NavItem(icon: Icons.checklist_rounded,    label: 'Tasks'),
-          _NavItem(icon: Icons.savings_rounded,      label: 'Savings'),
+          _NavItem(icon: Icons.home_rounded,                  label: 'Home'),
+          _NavItem(icon: Icons.savings_rounded,               label: 'Savings'),
+          _NavItem(icon: Icons.account_balance_wallet_rounded,label: 'Wallet'),
+          _NavItem(icon: Icons.qr_code_scanner_rounded,       label: 'Scan'),
+          _NavItem(icon: Icons.people_rounded,                label: 'Family'),
         ],
       ),
     );

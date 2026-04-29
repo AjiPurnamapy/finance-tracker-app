@@ -232,7 +232,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                   // Register CTA
                   Center(
                     child: GestureDetector(
-                      onTap: () => context.push('/register'),
+                      onTap: () => context.push('/role-selection'),
                       child: RichText(
                         text: TextSpan(
                           style: TextStyle(

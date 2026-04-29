@@ -3,3 +3,6 @@ design/
 
 # Conversation
 conversation/
+
+# Agent
+.agents/

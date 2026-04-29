@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../view_models/auth_view_model.dart';
-
 class RoleSelectionView extends ConsumerStatefulWidget {
   const RoleSelectionView({super.key});
 
@@ -13,35 +11,10 @@ class RoleSelectionView extends ConsumerStatefulWidget {
 
 class _RoleSelectionViewState extends ConsumerState<RoleSelectionView> {
   String? _selectedRole;
-  bool _isLoading = false;
 
-  Future<void> _onContinue() async {
+  void _onContinue() {
     if (_selectedRole == null) return;
-    setState(() => _isLoading = true);
-
-    try {
-      // Save role to backend via PATCH /users/me
-      await ref.read(authViewModelProvider.notifier).updateRole(_selectedRole!);
-
-      if (mounted) {
-        context.go(
-            _selectedRole == 'child' ? '/child/dashboard' : '/parent/dashboard');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menyimpan role: $e'),
-            backgroundColor: const Color(0xFF2A1A1A),
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    context.push('/register?role=$_selectedRole');
   }
 
   @override
@@ -49,104 +22,96 @@ class _RoleSelectionViewState extends ConsumerState<RoleSelectionView> {
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 48),
-              const Text(
-                'How will you use\nthe app?',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  fontWeight: FontWeight.w800,
-                  height: 1.15,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Choose the role that best describes you\nto customize your experience.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 15,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 40),
-              _RoleCard(
-                isSelected: _selectedRole == 'parent',
-                onTap: () => setState(() => _selectedRole = 'parent'),
-                iconData: Icons.shield_rounded,
-                iconColor: const Color(0xFF137FEC),
-                title: 'I am a Parent',
-                subtitle: 'Family head & Administrator',
-                description:
-                    'Manage family spending, set smart limits, and scan receipts with AI.',
-              ),
-              const SizedBox(height: 16),
-              _RoleCard(
-                isSelected: _selectedRole == 'child',
-                onTap: () => setState(() => _selectedRole = 'child'),
-                iconData: Icons.savings_rounded,
-                iconColor: const Color(0xFF10B981),
-                title: 'I am a Student',
-                subtitle: 'Child or dependent account',
-                description:
-                    'Track your allowance, save for big goals, and learn healthy financial habits.',
-              ),
-              const Spacer(),
-              // Continue button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 300),
-                  opacity: _selectedRole != null ? 1.0 : 0.4,
-                  child: FilledButton(
-                    onPressed:
-                        (_selectedRole != null && !_isLoading) ? _onContinue : null,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF137FEC),
-                      disabledBackgroundColor:
-                          const Color(0xFF137FEC).withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Continue',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 48),
+                        const Text(
+                          'How will you use\nthe app?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w800,
+                            height: 1.15,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Choose the role that best describes you\nto customize your experience.',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 15,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        _RoleCard(
+                          isSelected: _selectedRole == 'parent',
+                          onTap: () => setState(() => _selectedRole = 'parent'),
+                          iconData: Icons.shield_rounded,
+                          iconColor: const Color(0xFF137FEC),
+                          title: 'I am a Parent',
+                          subtitle: 'Family head & Administrator',
+                          description:
+                              'Manage family spending, set smart limits, and scan receipts with AI.',
+                        ),
+                        const SizedBox(height: 16),
+                        _RoleCard(
+                          isSelected: _selectedRole == 'child',
+                          onTap: () => setState(() => _selectedRole = 'child'),
+                          iconData: Icons.savings_rounded,
+                          iconColor: const Color(0xFF10B981),
+                          title: 'I am a Student',
+                          subtitle: 'Child or dependent account',
+                          description:
+                              'Track your allowance, save for big goals, and learn healthy financial habits.',
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 24),
+                        // Continue button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 300),
+                            opacity: _selectedRole != null ? 1.0 : 0.4,
+                            child: FilledButton(
+                              onPressed:
+                                  (_selectedRole != null) ? _onContinue : null,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFF137FEC),
+                                disabledBackgroundColor:
+                                    const Color(0xFF137FEC).withValues(alpha: 0.4),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: const Text(
+                                'Continue',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  'You can change your role later in account settings.',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    fontSize: 12,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

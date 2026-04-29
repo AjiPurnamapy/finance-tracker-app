@@ -96,6 +96,15 @@ class ApiClient {
     }, requiresAuth: requiresAuth);
   }
 
+  /// DELETE with auto-token and refresh retry.
+  Future<dynamic> delete(String path, {bool requiresAuth = true}) async {
+    return _requestWithRefresh((token) {
+      return _client
+          .delete(Uri.parse('$baseUrl$path'), headers: _buildHeaders(token))
+          .timeout(_timeout);
+    }, requiresAuth: requiresAuth);
+  }
+
   // ── Token refresh interceptor ──────────────────────────────────────
 
   Future<dynamic> _requestWithRefresh(

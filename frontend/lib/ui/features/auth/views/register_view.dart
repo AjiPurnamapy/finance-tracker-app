@@ -49,18 +49,13 @@ class _RegisterViewState extends ConsumerState<RegisterView>
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      // Register without role — role will be set on the next screen
       await ref.read(authViewModelProvider.notifier).register(
             _emailController.text.trim(),
             _passwordController.text,
             _fullNameController.text.trim(),
-            // Default role "parent" for initial registration; overridden after role selection
-            role: 'parent',
+            role: widget.preselectedRole ?? 'parent',
           );
-      // After register + auto-login, redirect to role selection
-      if (mounted) {
-        context.go('/role-selection');
-      }
+      // Auto-login triggers state change, so app_router handles the redirect.
     } on ApiException catch (e) {
       if (mounted) _showError(e.message);
     } catch (e) {

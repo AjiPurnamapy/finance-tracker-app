@@ -14,7 +14,7 @@ class AuthViewModel extends AsyncNotifier<User?> {
   }
 
   Future<User?> _checkAuthStatus() async {
-    if (_repository.hasToken) {
+    if (await _repository.hasToken) {
       try {
         final user = await _repository.getCurrentUser();
         return user;

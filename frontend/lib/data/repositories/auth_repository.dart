@@ -1,23 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/auth_models.dart';
 import '../models/user_model.dart';
 import '../services/api_client.dart';
+import '../services/token_manager.dart';
 
-// Override this provider in main.dart once SharedPreferences is initialized
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('sharedPreferencesProvider must be overridden');
-});
+// sharedPreferencesProvider now lives in token_manager.dart.
+// Re-export it here so existing code that imports from auth_repository.dart
+// does not break.
+export '../services/token_manager.dart' show sharedPreferencesProvider;
 
 class AuthRepository {
   final ApiClient _apiClient;
-  final SharedPreferences _prefs;
+  final TokenManager _tokenManager;
 
-  static const String _accessTokenKey = 'access_token';
-  static const String _refreshTokenKey = 'refresh_token';
-
-  AuthRepository(this._apiClient, this._prefs);
+  AuthRepository(this._apiClient, this._tokenManager);
 
   Future<void> login(String email, String password) async {
     final response = await _apiClient.post('/auth/login', body: {
@@ -26,10 +23,16 @@ class AuthRepository {
     }, requiresAuth: false);
 
     final tokenResponse = TokenResponse.fromJson(response);
-    await _saveTokens(tokenResponse.accessToken, tokenResponse.refreshToken);
+    await _tokenManager.saveTokens(
+        tokenResponse.accessToken, tokenResponse.refreshToken);
   }
 
-  Future<void> register(String email, String password, String fullName, {String role = 'parent'}) async {
+  Future<void> register(
+    String email,
+    String password,
+    String fullName, {
+    String role = 'parent',
+  }) async {
     await _apiClient.post('/auth/register', body: {
       'email': email,
       'password': password,
@@ -39,7 +42,7 @@ class AuthRepository {
   }
 
   Future<User> getCurrentUser() async {
-    if (!hasToken) {
+    if (!await hasToken) {
       throw ApiException(401, 'No token found locally');
     }
     final response = await _apiClient.get('/users/me');
@@ -48,43 +51,32 @@ class AuthRepository {
 
   /// Update the user's role via PATCH /users/me
   Future<User> updateRole(String role) async {
-    final response = await _apiClient.patch('/users/me', body: {
-      'role': role,
-    });
+    final response = await _apiClient.patch('/users/me', body: {'role': role});
     return User.fromJson(response);
   }
 
   Future<void> logout() async {
-    final refreshToken = _prefs.getString(_refreshTokenKey);
+    final refreshToken = await _tokenManager.getRefreshToken();
 
-    if (refreshToken != null && hasToken) {
+    if (refreshToken != null && await hasToken) {
       try {
         await _apiClient.post('/auth/logout', body: {
           'refresh_token': refreshToken,
         });
       } catch (_) {
-        // We still want to clear local tokens even if the server request fails.
+        // Still clear local tokens even if server request fails.
       }
     }
-    await _clearTokens();
+    await _tokenManager.clearTokens();
   }
 
-  Future<void> _saveTokens(String access, String refresh) async {
-    await _prefs.setString(_accessTokenKey, access);
-    await _prefs.setString(_refreshTokenKey, refresh);
-  }
-
-  Future<void> _clearTokens() async {
-    await _prefs.remove(_accessTokenKey);
-    await _prefs.remove(_refreshTokenKey);
-  }
-
-  bool get hasToken => _prefs.containsKey(_accessTokenKey);
+  /// True if an access token exists in secure storage.
+  Future<bool> get hasToken => _tokenManager.hasToken();
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     ref.watch(apiClientProvider),
-    ref.watch(sharedPreferencesProvider),
+    ref.watch(tokenManagerProvider),
   );
 });

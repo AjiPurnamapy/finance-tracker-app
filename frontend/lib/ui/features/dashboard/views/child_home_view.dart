@@ -712,46 +712,51 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF137FEC)
-              : const Color(0xFF1A1F2E),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
+    return Semantics(
+      label: label,
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.only(right: 8, top: 4, bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xFF137FEC)
-                : Colors.white.withValues(alpha: 0.08),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 14,
+                : const Color(0xFF1A1F2E),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
               color: isSelected
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.45),
+                  ? const Color(0xFF137FEC)
+                  : Colors.white.withValues(alpha: 0.08),
             ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
                 color: isSelected
                     ? Colors.white
-                    : Colors.white.withValues(alpha: 0.55),
-                fontSize: 12,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w400,
+                    : Colors.white.withValues(alpha: 0.45),
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.55),
+                  fontSize: 12,
+                  fontWeight:
+                      isSelected ? FontWeight.w700 : FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1014,27 +1019,31 @@ class _AddFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF137FEC).withValues(alpha: 0.45),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+    return Semantics(
+      label: 'Tambah pengeluaran',
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF137FEC).withValues(alpha: 0.45),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
       ),
     );
   }

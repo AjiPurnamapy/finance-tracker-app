@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
-import '../repositories/auth_repository.dart';
+import 'token_manager.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -20,106 +19,93 @@ class ApiException implements Exception {
 
 class ApiClient {
   final http.Client _client = http.Client();
-  final SharedPreferences _prefs;
+  final TokenManager _tokenManager;
 
-  static const String _accessTokenKey = 'access_token';
-  static const String _refreshTokenKey = 'refresh_token';
   static const Duration _timeout = Duration(seconds: 15);
 
-  ApiClient(this._prefs);
+  ApiClient(this._tokenManager);
+
+  // ── Base URL (H-1 fix) ────────────────────────────────────────────────
+  // Release builds always use HTTPS. Dev builds use the local emulator URLs.
 
   String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8000/api/v1';
+    if (kReleaseMode) {
+      // TODO: Replace with your production domain before release
+      return 'https://api.yourdomain.com/api/v1';
     }
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/api/v1';
-    }
-    return 'http://localhost:8000/api/v1'; // Windows, macOS, iOS simulator
+    // Development only ↓
+    if (kIsWeb) return 'http://localhost:8000/api/v1';
+    if (Platform.isAndroid) return 'http://10.0.2.2:8000/api/v1';
+    return 'http://localhost:8000/api/v1'; // Windows / macOS / iOS sim
   }
 
-  // ── Internal token helpers ─────────────────────────────────────────
+  // ── Public API methods ────────────────────────────────────────────────
 
-  String? get _accessToken => _prefs.getString(_accessTokenKey);
-  String? get _refreshToken => _prefs.getString(_refreshTokenKey);
+  Future<dynamic> get(String path, {bool requiresAuth = true}) =>
+      _requestWithRefresh(
+        (token) => _client
+            .get(Uri.parse('$baseUrl$path'), headers: _buildHeaders(token))
+            .timeout(_timeout),
+        requiresAuth: requiresAuth,
+      );
 
-  Future<void> _saveTokens(String access, String refresh) async {
-    await _prefs.setString(_accessTokenKey, access);
-    await _prefs.setString(_refreshTokenKey, refresh);
-  }
-
-  Future<void> _clearTokens() async {
-    await _prefs.remove(_accessTokenKey);
-    await _prefs.remove(_refreshTokenKey);
-  }
-
-  // ── Public API methods ─────────────────────────────────────────────
-
-  /// GET with auto-token and refresh retry.
-  Future<dynamic> get(String path, {bool requiresAuth = true}) async {
-    return _requestWithRefresh((token) {
-      return _client
-          .get(Uri.parse('$baseUrl$path'), headers: _buildHeaders(token))
-          .timeout(_timeout);
-    }, requiresAuth: requiresAuth);
-  }
-
-  /// POST with auto-token and refresh retry.
-  Future<dynamic> post(String path, {
+  Future<dynamic> post(
+    String path, {
     Map<String, dynamic>? body,
     bool requiresAuth = true,
-  }) async {
-    return _requestWithRefresh((token) {
-      return _client
-          .post(
-            Uri.parse('$baseUrl$path'),
-            headers: _buildHeaders(token),
-            body: body != null ? jsonEncode(body) : null,
-          )
-          .timeout(_timeout);
-    }, requiresAuth: requiresAuth);
-  }
+  }) =>
+      _requestWithRefresh(
+        (token) => _client
+            .post(
+              Uri.parse('$baseUrl$path'),
+              headers: _buildHeaders(token),
+              body: body != null ? jsonEncode(body) : null,
+            )
+            .timeout(_timeout),
+        requiresAuth: requiresAuth,
+      );
 
-  /// PATCH with auto-token and refresh retry.
-  Future<dynamic> patch(String path, {
+  Future<dynamic> patch(
+    String path, {
     Map<String, dynamic>? body,
     bool requiresAuth = true,
-  }) async {
-    return _requestWithRefresh((token) {
-      return _client
-          .patch(
-            Uri.parse('$baseUrl$path'),
-            headers: _buildHeaders(token),
-            body: body != null ? jsonEncode(body) : null,
-          )
-          .timeout(_timeout);
-    }, requiresAuth: requiresAuth);
-  }
+  }) =>
+      _requestWithRefresh(
+        (token) => _client
+            .patch(
+              Uri.parse('$baseUrl$path'),
+              headers: _buildHeaders(token),
+              body: body != null ? jsonEncode(body) : null,
+            )
+            .timeout(_timeout),
+        requiresAuth: requiresAuth,
+      );
 
-  /// DELETE with auto-token and refresh retry.
-  Future<dynamic> delete(String path, {bool requiresAuth = true}) async {
-    return _requestWithRefresh((token) {
-      return _client
-          .delete(Uri.parse('$baseUrl$path'), headers: _buildHeaders(token))
-          .timeout(_timeout);
-    }, requiresAuth: requiresAuth);
-  }
+  Future<dynamic> delete(String path, {bool requiresAuth = true}) =>
+      _requestWithRefresh(
+        (token) => _client
+            .delete(Uri.parse('$baseUrl$path'), headers: _buildHeaders(token))
+            .timeout(_timeout),
+        requiresAuth: requiresAuth,
+      );
 
-  // ── Token refresh interceptor ──────────────────────────────────────
+  // ── Token refresh interceptor ─────────────────────────────────────────
 
   Future<dynamic> _requestWithRefresh(
     Future<http.Response> Function(String? token) request, {
     required bool requiresAuth,
   }) async {
-    final token = requiresAuth ? _accessToken : null;
+    final token =
+        requiresAuth ? await _tokenManager.getAccessToken() : null;
     http.Response response = await request(token);
 
-    // If 401 and we have a refresh token, try to refresh once
-    if (response.statusCode == 401 && requiresAuth && _refreshToken != null) {
+    // On 401, attempt token refresh once
+    if (response.statusCode == 401 &&
+        requiresAuth &&
+        await _tokenManager.getRefreshToken() != null) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
-        // Retry the original request with the new token
-        response = await request(_accessToken);
+        response = await request(await _tokenManager.getAccessToken());
       }
     }
 
@@ -127,7 +113,7 @@ class ApiClient {
   }
 
   Future<bool> _tryRefreshToken() async {
-    final refreshToken = _refreshToken;
+    final refreshToken = await _tokenManager.getRefreshToken();
     if (refreshToken == null) return false;
 
     try {
@@ -143,7 +129,8 @@ class ApiClient {
           .timeout(_timeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+        final jsonResponse =
+            jsonDecode(response.body) as Map<String, dynamic>;
         final data = jsonResponse.containsKey('data')
             ? jsonResponse['data'] as Map<String, dynamic>
             : jsonResponse;
@@ -152,29 +139,26 @@ class ApiClient {
         final newRefresh = data['refresh_token'] as String?;
 
         if (newAccess != null && newRefresh != null) {
-          await _saveTokens(newAccess, newRefresh);
+          await _tokenManager.saveTokens(newAccess, newRefresh);
           return true;
         }
       }
-      // Refresh failed — clear tokens
-      await _clearTokens();
+      await _tokenManager.clearTokens();
       return false;
     } catch (_) {
-      await _clearTokens();
+      await _tokenManager.clearTokens();
       return false;
     }
   }
 
-  // ── Shared helpers ─────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────
 
   Map<String, String> _buildHeaders(String? token) {
     final headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    if (token != null) {
-      headers['Authorization'] = 'Bearer $token';
-    }
+    if (token != null) headers['Authorization'] = 'Bearer $token';
     return headers;
   }
 
@@ -182,16 +166,14 @@ class ApiClient {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) return null;
 
-      // Decode first — some endpoints return a raw List, not a Map wrapper
       final decoded = jsonDecode(response.body);
 
-      // Handle raw arrays (e.g. savings-goals returns List<SavingsGoalResponse> directly)
+      // Some endpoints (e.g. savings-goals) return a raw List, not a Map wrapper
       if (decoded is List) return decoded;
 
       final jsonResponse = decoded as Map<String, dynamic>;
 
-      // Unwrap backend's SuccessResponse: { "success": true, "data": ... }
-      // Also handles PaginatedResponse which has { "success": true, "data": [...], "meta": {...} }
+      // Unwrap SuccessResponse / PaginatedResponse: { "success": true, "data": ... }
       if (jsonResponse.containsKey('success') &&
           jsonResponse['success'] == true) {
         return jsonResponse['data'];
@@ -200,9 +182,8 @@ class ApiClient {
     } else {
       String errorMessage = 'Unknown error';
       try {
-        final Map<String, dynamic> errorJson =
+        final errorJson =
             jsonDecode(response.body) as Map<String, dynamic>;
-        // FastAPI returns validation errors as list in 'detail' or string.
         if (errorJson['detail'] is String) {
           errorMessage = errorJson['detail'];
         } else if (errorJson['detail'] is List) {
@@ -212,9 +193,7 @@ class ApiClient {
           errorMessage = errorJson.toString();
         }
       } catch (_) {
-        if (response.body.isNotEmpty) {
-          errorMessage = response.body;
-        }
+        if (response.body.isNotEmpty) errorMessage = response.body;
       }
       throw ApiException(response.statusCode, errorMessage);
     }
@@ -222,5 +201,5 @@ class ApiClient {
 }
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient(ref.watch(sharedPreferencesProvider));
+  return ApiClient(ref.watch(tokenManagerProvider));
 });

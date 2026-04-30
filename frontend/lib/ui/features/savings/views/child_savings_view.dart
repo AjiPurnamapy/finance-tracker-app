@@ -100,7 +100,7 @@ class ChildSavingsView extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => _CreateGoalSheet(ref: ref),
+      builder: (_) => const _CreateGoalSheet(),
     );
   }
 
@@ -113,7 +113,7 @@ class ChildSavingsView extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => _ContributeSheet(ref: ref, goal: goal),
+      builder: (_) => _ContributeSheet(goal: goal),
     );
   }
 
@@ -483,15 +483,14 @@ class _GoalCard extends StatelessWidget {
 
 // ── Create Goal Sheet ─────────────────────────────────────────────────────────
 
-class _CreateGoalSheet extends StatefulWidget {
-  final WidgetRef ref;
-  const _CreateGoalSheet({required this.ref});
+class _CreateGoalSheet extends ConsumerStatefulWidget {
+  const _CreateGoalSheet();
 
   @override
-  State<_CreateGoalSheet> createState() => _CreateGoalSheetState();
+  ConsumerState<_CreateGoalSheet> createState() => _CreateGoalSheetState();
 }
 
-class _CreateGoalSheetState extends State<_CreateGoalSheet> {
+class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   bool _isLoading = false;
@@ -511,14 +510,14 @@ class _CreateGoalSheetState extends State<_CreateGoalSheet> {
 
     setState(() => _isLoading = true);
     try {
-      await widget.ref
+      await ref
           .read(savingsViewModelProvider.notifier)
           .createGoal(name: name, targetAmount: amount);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: $e')),
+          const SnackBar(content: Text('Gagal membuat goal. Coba lagi.')),
         );
       }
     } finally {
@@ -598,16 +597,15 @@ class _CreateGoalSheetState extends State<_CreateGoalSheet> {
 
 // ── Contribute Sheet ──────────────────────────────────────────────────────────
 
-class _ContributeSheet extends StatefulWidget {
-  final WidgetRef ref;
+class _ContributeSheet extends ConsumerStatefulWidget {
   final SavingsGoalModel goal;
-  const _ContributeSheet({required this.ref, required this.goal});
+  const _ContributeSheet({required this.goal});
 
   @override
-  State<_ContributeSheet> createState() => _ContributeSheetState();
+  ConsumerState<_ContributeSheet> createState() => _ContributeSheetState();
 }
 
-class _ContributeSheetState extends State<_ContributeSheet> {
+class _ContributeSheetState extends ConsumerState<_ContributeSheet> {
   final _amountController = TextEditingController();
   bool _isLoading = false;
 
@@ -624,14 +622,14 @@ class _ContributeSheetState extends State<_ContributeSheet> {
 
     setState(() => _isLoading = true);
     try {
-      await widget.ref
+      await ref
           .read(savingsViewModelProvider.notifier)
           .contribute(goalId: widget.goal.id, amount: amount);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: $e')),
+          const SnackBar(content: Text('Gagal menambah tabungan. Coba lagi.')),
         );
       }
     } finally {

@@ -182,10 +182,16 @@ class ApiClient {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) return null;
 
-      final Map<String, dynamic> jsonResponse =
-          jsonDecode(response.body) as Map<String, dynamic>;
+      // Decode first — some endpoints return a raw List, not a Map wrapper
+      final decoded = jsonDecode(response.body);
+
+      // Handle raw arrays (e.g. savings-goals returns List<SavingsGoalResponse> directly)
+      if (decoded is List) return decoded;
+
+      final jsonResponse = decoded as Map<String, dynamic>;
 
       // Unwrap backend's SuccessResponse: { "success": true, "data": ... }
+      // Also handles PaginatedResponse which has { "success": true, "data": [...], "meta": {...} }
       if (jsonResponse.containsKey('success') &&
           jsonResponse['success'] == true) {
         return jsonResponse['data'];

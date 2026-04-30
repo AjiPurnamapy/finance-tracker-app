@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../view_models/auth_view_model.dart';
 import '../../../../data/services/api_client.dart';
+import '../../../core/widgets/dark_text_field.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   final String? preselectedRole;
@@ -136,18 +137,23 @@ class _LoginViewState extends ConsumerState<LoginView>
                   ),
                   const SizedBox(height: 48),
                   // Email field
-                  _DarkTextField(
+                  DarkTextField(
                     controller: _emailController,
                     label: 'Email address',
                     hint: 'you@example.com',
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: Icons.email_outlined,
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Email tidak boleh kosong' : null,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'Email tidak boleh kosong';
+                      if (!RegExp(r'^[\w.+-]+@[\w-]+\.[\w.]+$').hasMatch(v.trim())) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   // Password field
-                  _DarkTextField(
+                  DarkTextField(
                     controller: _passwordController,
                     label: 'Password',
                     hint: '••••••••',
@@ -260,92 +266,6 @@ class _LoginViewState extends ConsumerState<LoginView>
           ),
         ),
       ),
-    );
-  }
-}
-
-// ── Reusable dark text field ──────────────────────────────────────────────────
-
-class _DarkTextField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final TextInputType keyboardType;
-  final bool obscureText;
-  final IconData prefixIcon;
-  final Widget? suffixIcon;
-  final String? Function(String?)? validator;
-
-  const _DarkTextField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    this.keyboardType = TextInputType.text,
-    this.obscureText = false,
-    required this.prefixIcon,
-    this.suffixIcon,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          validator: validator,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: Colors.white.withValues(alpha: 0.25),
-              fontSize: 15,
-            ),
-            prefixIcon: Icon(prefixIcon,
-                color: Colors.white.withValues(alpha: 0.35), size: 20),
-            suffixIcon: suffixIcon,
-            filled: true,
-            fillColor: const Color(0xFF1A1F2E),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF2A2F3E)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF2A2F3E)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF137FEC), width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE53E3E)),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE53E3E), width: 1.5),
-            ),
-            errorStyle: const TextStyle(color: Color(0xFFFC8181)),
-          ),
-        ),
-      ],
     );
   }
 }

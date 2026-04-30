@@ -21,7 +21,7 @@ class ChildFamilyView extends ConsumerWidget {
           error: (e, _) {
             final errStr = e.toString();
             if (errStr.contains('NOT_IN_FAMILY')) {
-              return _NotConnectedState(ref: ref);
+              return const _NotConnectedState();
             }
             return _ErrorState(
               onRetry: () =>
@@ -29,8 +29,8 @@ class ChildFamilyView extends ConsumerWidget {
             );
           },
           data: (family) => family == null
-              ? _NotConnectedState(ref: ref)
-              : _ConnectedState(family: family, ref: ref),
+              ? const _NotConnectedState()
+              : _ConnectedState(family: family),
         ),
       ),
     );
@@ -39,15 +39,16 @@ class ChildFamilyView extends ConsumerWidget {
 
 // ── State 1: Not Connected ────────────────────────────────────────────────────
 
-class _NotConnectedState extends StatefulWidget {
-  final WidgetRef ref;
-  const _NotConnectedState({required this.ref});
+/// Uses ConsumerStatefulWidget so it can access Riverpod providers directly
+/// without storing a stale WidgetRef from a parent widget (H-4 fix).
+class _NotConnectedState extends ConsumerStatefulWidget {
+  const _NotConnectedState();
 
   @override
-  State<_NotConnectedState> createState() => _NotConnectedStateState();
+  ConsumerState<_NotConnectedState> createState() => _NotConnectedStateState();
 }
 
-class _NotConnectedStateState extends State<_NotConnectedState> {
+class _NotConnectedStateState extends ConsumerState<_NotConnectedState> {
   final _codeController = TextEditingController();
   bool _isLoading = false;
   String? _error;
@@ -59,9 +60,10 @@ class _NotConnectedStateState extends State<_NotConnectedState> {
   }
 
   Future<void> _join() async {
-    final code = _codeController.text.trim();
-    if (code.length != 6) {
-      setState(() => _error = 'Kode harus 6 digit angka');
+    final code = _codeController.text.trim().toUpperCase();
+    // M-5: Validate alphanumeric, exactly 6 chars
+    if (code.length != 6 || !RegExp(r'^[A-Z0-9]{6}$').hasMatch(code)) {
+      setState(() => _error = 'Kode harus 6 karakter (huruf/angka)');
       return;
     }
     setState(() {
@@ -69,16 +71,16 @@ class _NotConnectedStateState extends State<_NotConnectedState> {
       _error = null;
     });
     try {
-      await widget.ref
+      await ref
           .read(familyViewModelProvider.notifier)
           .joinFamily(code);
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = 'Kode tidak valid atau sudah kadaluarsa';
-          _isLoading = false;
-        });
+        setState(() => _error = 'Kode tidak valid atau sudah kadaluarsa');
       }
+    } finally {
+      // H-5: Always reset loading regardless of success or failure
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -254,14 +256,13 @@ class _NotConnectedStateState extends State<_NotConnectedState> {
 
 // ── State 2: Connected ────────────────────────────────────────────────────────
 
-class _ConnectedState extends StatelessWidget {
+/// Pure StatelessWidget — all read-only rendering, no Riverpod interactions.
+class _ConnectedState extends ConsumerWidget {
   final FamilyModel family;
-  final WidgetRef ref;
-
-  const _ConnectedState({required this.family, required this.ref});
+  const _ConnectedState({required this.family});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Find parent member (admin role)
     final parent = family.members
         .where((m) => m.role == 'admin')

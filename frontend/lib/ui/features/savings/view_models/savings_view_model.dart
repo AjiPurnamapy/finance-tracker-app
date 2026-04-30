@@ -2,18 +2,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/models/savings_goal_model.dart';
 import '../../../../data/repositories/savings_repository.dart';
+import '../../../../data/services/api_client.dart';
 
 class SavingsViewModel extends AsyncNotifier<List<SavingsGoalModel>> {
   @override
   Future<List<SavingsGoalModel>> build() async {
-    return ref.read(savingsRepositoryProvider).listGoals();
+    return _load();
+  }
+
+  Future<List<SavingsGoalModel>> _load() async {
+    try {
+      return await ref.read(savingsRepositoryProvider).listGoals();
+    } catch (e) {
+      // M-3: NOT_IN_FAMILY is a normal state (child not yet in family),
+      // return empty list so the UI shows its empty/join-family state
+      // rather than a red error screen.
+      if (e is ApiException &&
+          (e.statusCode == 404 || e.message.contains('NOT_IN_FAMILY'))) {
+        return [];
+      }
+      rethrow;
+    }
   }
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
-      () => ref.read(savingsRepositoryProvider).listGoals(),
-    );
+    state = await AsyncValue.guard(_load);
   }
 
   Future<void> createGoal({

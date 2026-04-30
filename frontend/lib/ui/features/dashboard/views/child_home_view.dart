@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/models/expense_model.dart';
@@ -104,8 +103,257 @@ class ChildHomeView extends ConsumerWidget {
       ),
       // ── FAB
       floatingActionButton: _AddFab(
-        onTap: () => context.push('/child/add-expense'),
+        onTap: () => _showAddExpenseSheet(context, ref),
       ),
+    );
+  }
+
+  void _showAddExpenseSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1A1F2E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const _AddExpenseSheet(),
+    );
+  }
+}
+
+// ── Add Expense Sheet ─────────────────────────────────────────────────────────
+
+/// Inline bottom sheet for adding expenses — replaces the non-existent
+/// '/child/add-expense' route (C-3 fix).
+class _AddExpenseSheet extends ConsumerStatefulWidget {
+  const _AddExpenseSheet();
+
+  @override
+  ConsumerState<_AddExpenseSheet> createState() => _AddExpenseSheetState();
+}
+
+const _kExpenseCategories = [
+  'Food', 'Transport', 'Education', 'Entertainment', 'Health', 'Other'
+];
+
+class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
+  final _titleController = TextEditingController();
+  final _amountController = TextEditingController();
+  String _category = _kExpenseCategories.first;
+  bool _deductFromWallet = false;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final title = _titleController.text.trim();
+    final amount = double.tryParse(
+        _amountController.text.replaceAll('.', '').replaceAll(',', ''));
+    if (title.isEmpty || amount == null || amount <= 0) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(childHomeViewModelProvider.notifier).addExpense(
+            amount: amount,
+            category: _category,
+            title: title,
+            deductFromWallet: _deductFromWallet,
+          );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Gagal menambah pengeluaran. Coba lagi.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          20, 16, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Tambah Pengeluaran',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SheetTextField(
+              controller: _titleController,
+              label: 'Nama Pengeluaran',
+              hint: 'Contoh: Makan siang'),
+          const SizedBox(height: 12),
+          _SheetTextField(
+              controller: _amountController,
+              label: 'Jumlah (Rp)',
+              hint: '25000',
+              keyboardType: TextInputType.number),
+          const SizedBox(height: 12),
+          Text(
+            'Kategori',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.65),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            initialValue: _category,
+            dropdownColor: const Color(0xFF1A1F2E),
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: const Color(0xFF0D1117),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF137FEC)),
+              ),
+            ),
+            items: _kExpenseCategories
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
+            onChanged: (v) => setState(() => _category = v ?? _category),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Switch(
+                value: _deductFromWallet,
+                onChanged: (v) => setState(() => _deductFromWallet = v),
+                activeThumbColor: const Color(0xFF137FEC),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Potong dari Wallet',
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _isLoading ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF137FEC),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Simpan',
+                      style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final TextInputType keyboardType;
+
+  const _SheetTextField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.65),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle:
+                TextStyle(color: Colors.white.withValues(alpha: 0.25)),
+            filled: true,
+            fillColor: const Color(0xFF0D1117),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF137FEC)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -173,8 +421,9 @@ class _ErrorBody extends StatelessWidget {
                 fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
+          // H-2: Show friendly message instead of raw error details
           Text(
-            error.toString(),
+            'Terjadi kesalahan. Pastikan koneksi internetmu aktif.',
             style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.35), fontSize: 12),
             textAlign: TextAlign.center,

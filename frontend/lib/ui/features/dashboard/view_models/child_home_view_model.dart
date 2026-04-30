@@ -98,6 +98,30 @@ class ChildHomeViewModel extends AsyncNotifier<ChildHomeState> {
     state = await AsyncValue.guard(_load);
   }
 
+  Future<void> addExpense({
+    required double amount,
+    required String category,
+    required String title,
+    String? description,
+    bool deductFromWallet = false,
+  }) async {
+    final expenseRepo = ref.read(expenseRepositoryProvider);
+    final newExpense = await expenseRepo.createExpense(
+      amount: amount,
+      category: category,
+      title: title,
+      description: description,
+      deductFromWallet: deductFromWallet,
+    );
+    state.whenData((s) {
+      state = AsyncValue.data(
+        s.copyWith(recentExpenses: [newExpense, ...s.recentExpenses]),
+      );
+    });
+    // Refresh to update wallet balance too
+    await refresh();
+  }
+
   void selectCategory(String? category) {
     state.whenData((s) {
       state = AsyncValue.data(s.copyWith(

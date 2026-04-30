@@ -226,26 +226,32 @@ class _RegisterViewState extends ConsumerState<RegisterView>
                   ),
                   const SizedBox(height: 24),
                   Center(
-                    child: GestureDetector(
-                      onTap: () => context.pop(),
-                      child: RichText(
-                        text: TextSpan(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Already have an account? ',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.white.withValues(alpha: 0.5),
                           ),
-                          children: const [
-                            TextSpan(text: 'Already have an account? '),
-                            TextSpan(
-                              text: 'Sign in',
+                        ),
+                        InkWell(
+                          onTap: () => context.go('/login'),  
+                          borderRadius: BorderRadius.circular(4),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Text(
+                              'Sign in',
                               style: TextStyle(
+                                fontSize: 14,
                                 color: Color(0xFF137FEC),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 40),

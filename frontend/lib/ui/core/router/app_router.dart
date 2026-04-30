@@ -80,17 +80,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginView(),
+        pageBuilder: (context, state) => _fadeRoute(
+          key: state.pageKey,
+          child: const LoginView(),
+        ),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => RegisterView(
-          preselectedRole: state.uri.queryParameters['role'],
+        pageBuilder: (context, state) => _fadeRoute(
+          key: state.pageKey,
+          child: RegisterView(
+            preselectedRole: state.uri.queryParameters['role'],
+          ),
         ),
       ),
       GoRoute(
         path: '/role-selection',
-        builder: (context, state) => const RoleSelectionView(),
+        pageBuilder: (context, state) => _fadeRoute(
+          key: state.pageKey,
+          child: const RoleSelectionView(),
+        ),
       ),
 
       // ── Parent Shell ────────────────────────────────────────────────
@@ -187,4 +196,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 String _homeForRole(String? role) {
   if (role?.trim().toLowerCase() == 'child') return '/child/home';
   return '/parent/dashboard';
+}
+
+/// Smooth fade transition for auth routes.
+/// Replaces GoRouter's default slide-up so navigating between
+/// login → role-selection → register feels seamless.
+CustomTransitionPage<void> _fadeRoute({
+  required LocalKey key,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: key,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 280),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+        child: child,
+      );
+    },
+  );
 }

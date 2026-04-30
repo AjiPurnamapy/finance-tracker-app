@@ -237,26 +237,33 @@ class _LoginViewState extends ConsumerState<LoginView>
                   const SizedBox(height: 24),
                   // Register CTA
                   Center(
-                    child: GestureDetector(
-                      onTap: () => context.push('/role-selection'),
-                      child: RichText(
-                        text: TextSpan(
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          "Don't have an account? ",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.white.withValues(alpha: 0.5),
                           ),
-                          children: const [
-                            TextSpan(text: "Don't have an account? "),
-                            TextSpan(
-                              text: 'Create one',
+                        ),
+                        InkWell(
+                          onTap: () => context.push('/role-selection'),
+                          borderRadius: BorderRadius.circular(4),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Text(
+                              'Create one',
                               style: TextStyle(
+                                fontSize: 14,
                                 color: Color(0xFF137FEC),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 40),

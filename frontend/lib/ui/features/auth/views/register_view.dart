@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../view_models/auth_view_model.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../core/widgets/dark_text_field.dart';
+import '../../../core/themes/app_colors.dart';
 
 class RegisterView extends ConsumerStatefulWidget {
   final String? preselectedRole;
@@ -70,7 +71,7 @@ class _RegisterViewState extends ConsumerState<RegisterView>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF2A1A1A),
+        backgroundColor: AppColors.errorSurface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -81,7 +82,7 @@ class _RegisterViewState extends ConsumerState<RegisterView>
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SafeArea(
@@ -100,9 +101,9 @@ class _RegisterViewState extends ConsumerState<RegisterView>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1F2E),
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF2A2F3E)),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Icon(
                         Icons.arrow_back_rounded,
@@ -199,9 +200,9 @@ class _RegisterViewState extends ConsumerState<RegisterView>
                     child: FilledButton(
                       onPressed: _isLoading ? null : _register,
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF137FEC),
+                        backgroundColor: AppColors.primary,
                         disabledBackgroundColor:
-                            const Color(0xFF137FEC).withValues(alpha: 0.4),
+                            AppColors.primary.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -245,7 +246,7 @@ class _RegisterViewState extends ConsumerState<RegisterView>
                               'Sign in',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF137FEC),
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

@@ -16,6 +16,8 @@ abstract final class AppColors {
   static const success     = Color(0xFF10B981);  // Green — income, complete
   static const successDark = Color(0xFF059669);  // Darker green
   static const error       = Color(0xFFEF4444);  // Red — debt, delete
+  static const errorSurface = Color(0xFF2A1A1A); // Snackbar / error container bg
+  static const errorText   = Color(0xFFFC8181);  // Form validation error text
   static const warning     = Color(0xFFF59E0B);  // Amber — points, alerts
 
   // ── Borders / Dividers ───────────────────────────────────────────────
@@ -25,4 +27,7 @@ abstract final class AppColors {
   static const textPrimary   = Color(0xFFFFFFFF);
   static const textSecondary = Color(0x99FFFFFF); // ~60% white
   static const textMuted     = Color(0x66FFFFFF); // ~40% white
+
+  // ── State / Icon ─────────────────────────────────────────────────────
+  static const disabledIcon = Color(0xFF4A5060);  // Empty state / offline icons
 }

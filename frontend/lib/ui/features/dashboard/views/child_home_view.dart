@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../data/models/expense_model.dart';
 import '../../../features/auth/view_models/auth_view_model.dart';
 import '../view_models/child_home_view_model.dart';
+import '../../../core/themes/app_colors.dart';
 
 class ChildHomeView extends ConsumerWidget {
   const ChildHomeView({super.key});
@@ -15,7 +16,7 @@ class ChildHomeView extends ConsumerWidget {
     final user = ref.watch(authViewModelProvider).value;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: state.when(
         loading: () => const _LoadingBody(),
         error: (e, _) => _ErrorBody(
@@ -25,8 +26,8 @@ class ChildHomeView extends ConsumerWidget {
         data: (data) => RefreshIndicator(
           onRefresh: () =>
               ref.read(childHomeViewModelProvider.notifier).refresh(),
-          color: const Color(0xFF137FEC),
-          backgroundColor: const Color(0xFF1A1F2E),
+          color: AppColors.primary,
+          backgroundColor: AppColors.background,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -70,7 +71,7 @@ class ChildHomeView extends ConsumerWidget {
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
-                            color: Color(0xFF137FEC),
+                            color: AppColors.primary,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -112,7 +113,7 @@ class ChildHomeView extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1F2E),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -228,11 +229,11 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
             initialValue: _category,
-            dropdownColor: const Color(0xFF1A1F2E),
+            dropdownColor: AppColors.surface,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               filled: true,
-              fillColor: const Color(0xFF0D1117),
+              fillColor: AppColors.background,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(
@@ -247,7 +248,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF137FEC)),
+                borderSide: const BorderSide(color: AppColors.primary),
               ),
             ),
             items: _kExpenseCategories
@@ -261,7 +262,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               Switch(
                 value: _deductFromWallet,
                 onChanged: (v) => setState(() => _deductFromWallet = v),
-                activeThumbColor: const Color(0xFF137FEC),
+                activeThumbColor: AppColors.primary,
               ),
               const SizedBox(width: 8),
               Text(
@@ -277,7 +278,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
             child: FilledButton(
               onPressed: _isLoading ? null : _submit,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF137FEC),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
@@ -336,7 +337,7 @@ class _SheetTextField extends StatelessWidget {
             hintStyle:
                 TextStyle(color: Colors.white.withValues(alpha: 0.25)),
             filled: true,
-            fillColor: const Color(0xFF0D1117),
+            fillColor: AppColors.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
@@ -349,7 +350,7 @@ class _SheetTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF137FEC)),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
         ),
@@ -391,7 +392,7 @@ class _LoadingBody extends StatelessWidget {
       height: h,
       margin: EdgeInsets.fromLTRB(mx, mt, mx, mb),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(radius),
       ),
     );
@@ -411,7 +412,7 @@ class _ErrorBody extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off_rounded, color: Color(0xFF4A5060), size: 52),
+          const Icon(Icons.wifi_off_rounded, color: AppColors.disabledIcon, size: 52),
           const SizedBox(height: 16),
           Text(
             'Gagal memuat data',
@@ -432,7 +433,7 @@ class _ErrorBody extends StatelessWidget {
           FilledButton(
             onPressed: onRetry,
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF137FEC)),
+                backgroundColor: AppColors.primary),
             child: const Text('Coba Lagi'),
           ),
         ],
@@ -462,7 +463,7 @@ class _Header extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+                  colors: [AppColors.primary, AppColors.primaryDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -515,7 +516,7 @@ class _Header extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1F2E),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.06),
@@ -561,7 +562,7 @@ class _BalanceCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+          colors: [AppColors.primary, AppColors.primaryDark],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -631,12 +632,12 @@ class _BalanceCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.trending_up_rounded,
-                      color: Color(0xFF137FEC), size: 18),
+                      color: AppColors.primary, size: 18),
                   SizedBox(width: 8),
                   Text(
                     'Lihat Tren',
                     style: TextStyle(
-                      color: Color(0xFF137FEC),
+                      color: AppColors.primary,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -724,12 +725,12 @@ class _Chip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF137FEC)
-                : const Color(0xFF1A1F2E),
+                ? AppColors.primary
+                : AppColors.surface,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF137FEC)
+                  ? AppColors.primary
                   : Colors.white.withValues(alpha: 0.08),
             ),
           ),
@@ -821,7 +822,7 @@ class _ExpenseCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
@@ -871,7 +872,7 @@ class _ExpenseCard extends StatelessWidget {
               Text(
                 '-${fmt.format(expense.amount)}',
                 style: const TextStyle(
-                  color: Color(0xFFEF4444),
+                  color: AppColors.error,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
@@ -926,7 +927,7 @@ class _EmptyActivity extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1F2E),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -961,7 +962,7 @@ class _AiTipCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFF137FEC).withValues(alpha: 0.25),
@@ -977,7 +978,7 @@ class _AiTipCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.auto_awesome_rounded,
-                color: Color(0xFF137FEC), size: 20),
+                color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -987,7 +988,7 @@ class _AiTipCard extends StatelessWidget {
                 const Text(
                   'AI SAVING TIP',
                   style: TextStyle(
-                    color: Color(0xFF137FEC),
+                    color: AppColors.primary,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
@@ -1029,7 +1030,7 @@ class _AddFab extends StatelessWidget {
           height: 56,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+              colors: [AppColors.primary, AppColors.primaryDark],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

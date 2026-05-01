@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../data/models/savings_goal_model.dart';
 import '../../savings/view_models/savings_view_model.dart';
+import '../../../core/themes/app_colors.dart';
 
 class ChildSavingsView extends ConsumerWidget {
   const ChildSavingsView({super.key});
@@ -13,7 +14,7 @@ class ChildSavingsView extends ConsumerWidget {
     final state = ref.watch(savingsViewModelProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -37,7 +38,7 @@ class ChildSavingsView extends ConsumerWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF137FEC),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.add_rounded,
@@ -52,7 +53,7 @@ class ChildSavingsView extends ConsumerWidget {
               child: state.when(
                 loading: () => const Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFF137FEC),
+                    color: AppColors.primary,
                   ),
                 ),
                 error: (e, _) => _ErrorState(
@@ -68,8 +69,8 @@ class ChildSavingsView extends ConsumerWidget {
                     : RefreshIndicator(
                         onRefresh: () =>
                             ref.read(savingsViewModelProvider.notifier).refresh(),
-                        color: const Color(0xFF137FEC),
-                        backgroundColor: const Color(0xFF1A1F2E),
+                        color: AppColors.primary,
+                        backgroundColor: AppColors.surface,
                         child: ListView.separated(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                           itemCount: goals.length,
@@ -96,7 +97,7 @@ class ChildSavingsView extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1F2E),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -109,7 +110,7 @@ class ChildSavingsView extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1F2E),
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -122,7 +123,7 @@ class ChildSavingsView extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1F2E),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Hapus Goal',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
@@ -145,7 +146,7 @@ class ChildSavingsView extends ConsumerWidget {
                   .deleteGoal(goal.id);
             },
             child: const Text('Hapus',
-                style: TextStyle(color: Color(0xFFEF4444))),
+                style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -171,13 +172,13 @@ class _EmptyState extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1F2E),
+                color: AppColors.surface,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.savings_rounded,
                 size: 44,
-                color: const Color(0xFF137FEC).withValues(alpha: 0.7),
+                color: AppColors.primary.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 24),
@@ -208,7 +209,7 @@ class _EmptyState extends StatelessWidget {
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('Buat Goal Pertama'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF137FEC),
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -248,11 +249,11 @@ class _ErrorState extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF1A1F2E),
+                  color: AppColors.surface,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.family_restroom_rounded,
-                    color: Color(0xFF137FEC), size: 40),
+                    color: AppColors.primary, size: 40),
               ),
               const SizedBox(height: 24),
               const Text(
@@ -279,7 +280,7 @@ class _ErrorState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.cloud_off_rounded,
-              color: Color(0xFF4A5060), size: 52),
+              color: AppColors.disabledIcon, size: 52),
           const SizedBox(height: 12),
           Text(
             'Gagal memuat tabungan',
@@ -292,7 +293,7 @@ class _ErrorState extends StatelessWidget {
           FilledButton(
             onPressed: onRetry,
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF137FEC)),
+                backgroundColor: AppColors.primary),
             child: const Text('Coba Lagi'),
           ),
         ],
@@ -328,12 +329,12 @@ class _GoalCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: goal.isCompleted
             ? const LinearGradient(
-                colors: [Color(0xFF10B981), Color(0xFF059669)],
+                colors: [AppColors.success, AppColors.successDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : const LinearGradient(
-                colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+                colors: [AppColors.primary, AppColors.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -341,8 +342,8 @@ class _GoalCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: (goal.isCompleted
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFF137FEC))
+                    ? AppColors.success
+                    : AppColors.primary)
                 .withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 6),
@@ -387,7 +388,7 @@ class _GoalCard extends StatelessWidget {
                 PopupMenuButton<String>(
                   icon: Icon(Icons.more_vert_rounded,
                       color: Colors.white.withValues(alpha: 0.6), size: 20),
-                  color: const Color(0xFF1A1F2E),
+                  color: AppColors.surface,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   onSelected: (v) {
@@ -399,10 +400,10 @@ class _GoalCard extends StatelessWidget {
                       child: Row(
                         children: [
                           Icon(Icons.delete_outline_rounded,
-                              color: Color(0xFFEF4444), size: 18),
+                              color: AppColors.error, size: 18),
                           SizedBox(width: 8),
                           Text('Hapus',
-                              style: TextStyle(color: Color(0xFFEF4444))),
+                              style: TextStyle(color: AppColors.error)),
                         ],
                       ),
                     ),
@@ -572,7 +573,7 @@ class _CreateGoalSheetState extends ConsumerState<_CreateGoalSheet> {
             child: FilledButton(
               onPressed: _isLoading ? null : _submit,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF137FEC),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
@@ -678,7 +679,7 @@ class _ContributeSheetState extends ConsumerState<_ContributeSheet> {
             child: FilledButton(
               onPressed: _isLoading ? null : _submit,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF137FEC),
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
@@ -739,7 +740,7 @@ class _SheetField extends StatelessWidget {
             hintStyle:
                 TextStyle(color: Colors.white.withValues(alpha: 0.25)),
             filled: true,
-            fillColor: const Color(0xFF0D1117),
+            fillColor: AppColors.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
@@ -752,7 +753,7 @@ class _SheetField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF137FEC)),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
           ),
         ),

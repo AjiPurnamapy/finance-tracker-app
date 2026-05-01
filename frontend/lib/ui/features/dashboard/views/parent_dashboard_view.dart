@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/themes/app_colors.dart';
+
 class ParentDashboardView extends StatelessWidget {
   const ParentDashboardView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: Column(
@@ -17,7 +19,7 @@ class ParentDashboardView extends StatelessWidget {
                 height: 72,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+                  colors: [AppColors.primary, AppColors.primaryDark],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

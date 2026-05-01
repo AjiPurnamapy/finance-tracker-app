@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../view_models/auth_view_model.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../core/widgets/dark_text_field.dart';
+import '../../../core/themes/app_colors.dart';
 
 class LoginView extends ConsumerStatefulWidget {
   final String? preselectedRole;
@@ -69,7 +70,7 @@ class _LoginViewState extends ConsumerState<LoginView>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF2A1A1A),
+        backgroundColor: AppColors.errorSurface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -80,7 +81,7 @@ class _LoginViewState extends ConsumerState<LoginView>
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SafeArea(
@@ -101,11 +102,11 @@ class _LoginViewState extends ConsumerState<LoginView>
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+                        colors: [AppColors.primary, AppColors.primaryDark],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF137FEC).withValues(alpha: 0.35),
+                          color: AppColors.primary.withValues(alpha: 0.35),
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -181,9 +182,9 @@ class _LoginViewState extends ConsumerState<LoginView>
                     child: FilledButton(
                       onPressed: _isLoading ? null : _login,
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF137FEC),
+                        backgroundColor:AppColors.primary,
                         disabledBackgroundColor:
-                            const Color(0xFF137FEC).withValues(alpha: 0.4),
+                            AppColors.primary.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -257,7 +258,7 @@ class _LoginViewState extends ConsumerState<LoginView>
                               'Create one',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF137FEC),
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

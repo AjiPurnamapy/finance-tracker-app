@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/models/family_model.dart';
 import '../../family/view_models/family_view_model.dart';
+import '../../../core/themes/app_colors.dart';
 
 class ChildFamilyView extends ConsumerWidget {
   const ChildFamilyView({super.key});
@@ -12,11 +13,11 @@ class ChildFamilyView extends ConsumerWidget {
     final state = ref.watch(familyViewModelProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: state.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(color: Color(0xFF137FEC)),
+            child: CircularProgressIndicator(color: AppColors.primary),
           ),
           error: (e, _) {
             final errStr = e.toString();
@@ -107,7 +108,7 @@ class _NotConnectedStateState extends ConsumerState<_NotConnectedState> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1F2E),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -124,16 +125,16 @@ class _NotConnectedStateState extends ConsumerState<_NotConnectedState> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1F2E),
+              color: AppColors.surface,
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFF137FEC).withValues(alpha: 0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
             child: const Icon(
               Icons.link_rounded,
-              color: Color(0xFF137FEC),
+              color: AppColors.primary,
               size: 52,
             ),
           ),
@@ -192,9 +193,9 @@ class _NotConnectedStateState extends ConsumerState<_NotConnectedState> {
                 letterSpacing: 8,
               ),
               filled: true,
-              fillColor: const Color(0xFF1A1F2E),
+              fillColor: AppColors.surface,
               errorText: _error,
-              errorStyle: const TextStyle(color: Color(0xFFEF4444)),
+              errorStyle: const TextStyle(color: AppColors.error),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide(
@@ -209,11 +210,11 @@ class _NotConnectedStateState extends ConsumerState<_NotConnectedState> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFF137FEC)),
+                borderSide: const BorderSide(color: AppColors.primary),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                borderSide: const BorderSide(color: AppColors.error),
               ),
             ),
           ),
@@ -223,9 +224,9 @@ class _NotConnectedStateState extends ConsumerState<_NotConnectedState> {
             child: FilledButton(
               onPressed: _isLoading ? null : _join,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF137FEC),
+                backgroundColor: AppColors.primary,
                 disabledBackgroundColor:
-                    const Color(0xFF137FEC).withValues(alpha: 0.4),
+                    AppColors.primary.withValues(alpha: 0.4),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -271,8 +272,8 @@ class _ConnectedState extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(familyViewModelProvider.notifier).refresh(),
-      color: const Color(0xFF137FEC),
-      backgroundColor: const Color(0xFF1A1F2E),
+      color: AppColors.primary,
+      backgroundColor: AppColors.background,
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         physics: const AlwaysScrollableScrollPhysics(),
@@ -292,10 +293,10 @@ class _ConnectedState extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1F2E),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                color: AppColors.success.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -308,7 +309,7 @@ class _ConnectedState extends ConsumerWidget {
                       height: 48,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+                          colors: [AppColors.primary, AppColors.primaryDark],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -356,7 +357,7 @@ class _ConnectedState extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        color: AppColors.success.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Row(
@@ -364,13 +365,13 @@ class _ConnectedState extends ConsumerWidget {
                         children: [
                           CircleAvatar(
                             radius: 4,
-                            backgroundColor: Color(0xFF10B981),
+                            backgroundColor: AppColors.success,
                           ),
                           SizedBox(width: 6),
                           Text(
                             'AKTIF',
                             style: TextStyle(
-                              color: Color(0xFF10B981),
+                              color: AppColors.success,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                             ),
@@ -412,21 +413,21 @@ class _ConnectedState extends ConsumerWidget {
           const SizedBox(height: 16),
           _FeatureRow(
             icon: Icons.visibility_rounded,
-            iconColor: const Color(0xFF137FEC),
+            iconColor: AppColors.primary,
             title: 'Ringkasan Pengeluaran',
             subtitle:
                 'Orang tua dapat melihat ringkasan pengeluaranmu setiap bulan.',
           ),
           _FeatureRow(
             icon: Icons.account_balance_wallet_rounded,
-            iconColor: const Color(0xFF10B981),
+            iconColor: AppColors.success,
             title: 'Transfer Uang Saku',
             subtitle:
                 'Orang tua bisa kirim uang saku langsung ke walletmu.',
           ),
           _FeatureRow(
             icon: Icons.task_alt_rounded,
-            iconColor: const Color(0xFFF59E0B),
+            iconColor: AppColors.warning,
             title: 'Tugas & Reward',
             subtitle:
                 'Selesaikan tugas dari orang tua dan dapatkan reward poin.',
@@ -449,7 +450,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1117),
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -544,7 +545,7 @@ class _ErrorState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.cloud_off_rounded,
-              color: Color(0xFF4A5060), size: 52),
+              color: AppColors.disabledIcon, size: 52),
           const SizedBox(height: 12),
           Text(
             'Gagal memuat data family',
@@ -557,7 +558,7 @@ class _ErrorState extends StatelessWidget {
           FilledButton(
             onPressed: onRetry,
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF137FEC)),
+                backgroundColor: AppColors.primary),
             child: const Text('Coba Lagi'),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/themes/app_colors.dart';
 
 /// Scan Tab — UI-only placeholder (AI backend integration nanti)
 class ScanView extends StatefulWidget {
@@ -34,7 +35,7 @@ class _ScanViewState extends State<ScanView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -56,16 +57,16 @@ class _ScanViewState extends State<ScanView>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF137FEC).withValues(alpha: 0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFF137FEC).withValues(alpha: 0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'AI',
                       style: TextStyle(
-                        color: Color(0xFF137FEC),
+                        color: AppColors.primary,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.5,
@@ -103,9 +104,9 @@ class _ScanViewState extends State<ScanView>
                           height: 160,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF137FEC).withValues(alpha: 0.08),
+                            color: AppColors.primary.withValues(alpha: 0.08),
                             border: Border.all(
-                              color: const Color(0xFF137FEC).withValues(alpha: 0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               width: 1.5,
                             ),
                           ),
@@ -116,11 +117,11 @@ class _ScanViewState extends State<ScanView>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color:
-                                    const Color(0xFF137FEC).withValues(alpha: 0.12),
+                                    AppColors.primary.withValues(alpha: 0.12),
                               ),
                               child: const Icon(
                                 Icons.qr_code_scanner_rounded,
-                                color: Color(0xFF137FEC),
+                                color: AppColors.primary,
                                 size: 52,
                               ),
                             ),
@@ -175,16 +176,16 @@ class _ScanViewState extends State<ScanView>
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1F2E),
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFF137FEC).withValues(alpha: 0.2),
+                            color: AppColors.primary.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
                           children: [
                             const Icon(Icons.auto_awesome_rounded,
-                                color: Color(0xFF137FEC), size: 18),
+                                color: AppColors.primary, size: 18),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -214,7 +215,7 @@ class _ScanViewState extends State<ScanView>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Fitur scan sedang dalam pengembangan 🚀'),
-        backgroundColor: const Color(0xFF1A1F2E),
+        backgroundColor: AppColors.surface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -242,7 +243,7 @@ class _ScanButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1F2E),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
@@ -252,10 +253,10 @@ class _ScanButton extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF137FEC).withValues(alpha: 0.12),
+                color: AppColors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: const Color(0xFF137FEC), size: 22),
+              child: Icon(icon, color: AppColors.primary, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(

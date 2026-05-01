@@ -77,13 +77,13 @@ class DarkTextField extends StatelessWidget {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE53E3E)),
+              borderSide: const BorderSide(color: AppColors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE53E3E), width: 1.5),
+              borderSide: const BorderSide(color: AppColors.error, width: 1.5),
             ),
-            errorStyle: const TextStyle(color: Color(0xFFFC8181)),
+            errorStyle: const TextStyle(color: AppColors.errorText),
           ),
         ),
       ],

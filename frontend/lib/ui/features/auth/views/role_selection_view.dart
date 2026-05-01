@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/themes/app_colors.dart';
+
 class RoleSelectionView extends ConsumerStatefulWidget {
   const RoleSelectionView({super.key});
 
@@ -20,7 +22,7 @@ class _RoleSelectionViewState extends ConsumerState<RoleSelectionView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -57,7 +59,7 @@ class _RoleSelectionViewState extends ConsumerState<RoleSelectionView> {
                           isSelected: _selectedRole == 'parent',
                           onTap: () => setState(() => _selectedRole = 'parent'),
                           iconData: Icons.shield_rounded,
-                          iconColor: const Color(0xFF137FEC),
+                          iconColor: AppColors.primary,
                           title: 'I am a Parent',
                           subtitle: 'Family head & Administrator',
                           description:
@@ -68,7 +70,7 @@ class _RoleSelectionViewState extends ConsumerState<RoleSelectionView> {
                           isSelected: _selectedRole == 'child',
                           onTap: () => setState(() => _selectedRole = 'child'),
                           iconData: Icons.savings_rounded,
-                          iconColor: const Color(0xFF10B981),
+                          iconColor: AppColors.success,
                           title: 'I am a Student',
                           subtitle: 'Child or dependent account',
                           description:
@@ -87,9 +89,9 @@ class _RoleSelectionViewState extends ConsumerState<RoleSelectionView> {
                               onPressed:
                                   (_selectedRole != null) ? _onContinue : null,
                               style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF137FEC),
+                                backgroundColor: AppColors.primary,
                                 disabledBackgroundColor:
-                                    const Color(0xFF137FEC).withValues(alpha: 0.4),
+                                    AppColors.primary.withValues(alpha: 0.4),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -148,10 +150,10 @@ class _RoleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? iconColor.withValues(alpha: 0.08)
-              : const Color(0xFF1A1F2E),
+              : AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? iconColor : const Color(0xFF2A2F3E),
+            color: isSelected ? iconColor : AppColors.border,
             width: isSelected ? 1.5 : 1,
           ),
         ),

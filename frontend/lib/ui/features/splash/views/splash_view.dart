@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../ui/core/themes/app_colors.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -78,15 +79,15 @@ class _SplashViewState extends State<SplashView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment.center,
             radius: 1.2,
             colors: [
-              Color(0xFF1A1F2E),
-              Color(0xFF0D1117),
+              AppColors.surface,
+              AppColors.background,
             ],
           ),
         ),
@@ -106,7 +107,7 @@ class _SplashViewState extends State<SplashView>
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            const Color(0xFF137FEC).withValues(alpha: 0.15),
+                            AppColors.primary.withValues(alpha: 0.15),
                             Colors.transparent,
                           ],
                         ),
@@ -134,17 +135,17 @@ class _SplashViewState extends State<SplashView>
                             height: 96,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(24),
-                              gradient: const LinearGradient(
+                              gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  Color(0xFF137FEC),
-                                  Color(0xFF0A5AB5),
+                                  AppColors.primary,
+                                  AppColors.primaryDark,
                                 ],
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF137FEC).withValues(alpha: 0.4),
+                                  color: AppColors.primary.withValues(alpha: 0.4),
                                   blurRadius: 30,
                                   spreadRadius: 5,
                                 ),
@@ -206,7 +207,7 @@ class _SplashViewState extends State<SplashView>
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            const Color(0xFF137FEC).withValues(alpha: 0.8),
+                            AppColors.primary.withValues(alpha: 0.8),
                           ),
                         ),
                       ),

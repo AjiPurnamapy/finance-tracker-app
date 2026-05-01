@@ -6,6 +6,7 @@ import '../../../../data/models/transaction_model.dart';
 import '../../../../data/repositories/wallet_repository.dart';
 import '../../../../data/models/wallet_model.dart';
 import '../../../../data/services/api_client.dart';
+import '../../../../ui/core/themes/app_colors.dart';
 
 // ViewModel inline (sederhana, hanya load data)
 final childWalletProvider = FutureProvider<(WalletModel?, List<TransactionModel>)>((ref) async {
@@ -44,7 +45,7 @@ class ChildWalletView extends ConsumerWidget {
     final state = ref.watch(childWalletProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -68,7 +69,7 @@ class ChildWalletView extends ConsumerWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1F2E),
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -85,14 +86,14 @@ class ChildWalletView extends ConsumerWidget {
             Expanded(
               child: state.when(
                 loading: () => const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF137FEC)),
+                  child: CircularProgressIndicator(color: AppColors.primary),
                 ),
                 error: (e, _) => Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.cloud_off_rounded,
-                          color: Color(0xFF4A5060), size: 52),
+                          color: AppColors.disabledIcon, size: 52),
                       const SizedBox(height: 12),
                       Text(
                         'Gagal memuat dompet',
@@ -105,7 +106,7 @@ class ChildWalletView extends ConsumerWidget {
                       FilledButton(
                         onPressed: () => ref.refresh(childWalletProvider),
                         style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF137FEC)),
+                            backgroundColor: AppColors.primary),
                         child: const Text('Coba Lagi'),
                       ),
                     ],
@@ -123,9 +124,9 @@ class ChildWalletView extends ConsumerWidget {
                           children: [
                             CircleAvatar(
                               radius: 40,
-                              backgroundColor: Color(0xFF1A1F2E),
+                              backgroundColor: AppColors.surface,
                               child: Icon(Icons.account_balance_wallet_rounded,
-                                  color: Color(0xFF137FEC), size: 38),
+                                  color: AppColors.primary, size: 38),
                             ),
                             SizedBox(height: 24),
                             Text(
@@ -151,8 +152,8 @@ class ChildWalletView extends ConsumerWidget {
                   }
                   return RefreshIndicator(
                     onRefresh: () async => ref.refresh(childWalletProvider),
-                    color: const Color(0xFF137FEC),
-                    backgroundColor: const Color(0xFF1A1F2E),
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.surface,
                     child: CustomScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       slivers: [
@@ -241,7 +242,7 @@ class _BalanceSection extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF137FEC), Color(0xFF0A5AB5)],
+                colors: [AppColors.primary, AppColors.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -285,10 +286,10 @@ class _BalanceSection extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1F2E),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                color: AppColors.warning.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -297,11 +298,11 @@ class _BalanceSection extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                    color: AppColors.warning.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.stars_rounded,
-                      color: Color(0xFFF59E0B), size: 22),
+                      color: AppColors.warning, size: 22),
                 ),
                 const SizedBox(width: 14),
                 Column(
@@ -318,7 +319,7 @@ class _BalanceSection extends StatelessWidget {
                     Text(
                       '${wallet.balancePts.toStringAsFixed(0)} PTS',
                       style: const TextStyle(
-                        color: Color(0xFFF59E0B),
+                        color: AppColors.warning,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
@@ -329,14 +330,14 @@ class _BalanceSection extends StatelessWidget {
                 Text(
                   'Tukar PTS',
                   style: const TextStyle(
-                    color: Color(0xFFF59E0B),
+                    color: AppColors.warning,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(width: 4),
                 const Icon(Icons.chevron_right_rounded,
-                    color: Color(0xFFF59E0B), size: 18),
+                    color: AppColors.warning, size: 18),
               ],
             ),
           ),
@@ -364,7 +365,7 @@ class _TransactionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1F2E),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
@@ -375,8 +376,8 @@ class _TransactionCard extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: (isCredit
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFEF4444))
+                      ? AppColors.success
+                      : AppColors.error)
                   .withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -385,8 +386,8 @@ class _TransactionCard extends StatelessWidget {
                   ? Icons.arrow_downward_rounded
                   : Icons.arrow_upward_rounded,
               color: isCredit
-                  ? const Color(0xFF10B981)
-                  : const Color(0xFFEF4444),
+                  ? AppColors.success
+                  : AppColors.error,
               size: 20,
             ),
           ),
@@ -420,8 +421,8 @@ class _TransactionCard extends StatelessWidget {
             '${isCredit ? '+' : '-'}${fmt.format(tx.amount)}',
             style: TextStyle(
               color: isCredit
-                  ? const Color(0xFF10B981)
-                  : const Color(0xFFEF4444),
+                  ? AppColors.success
+                  : AppColors.error,
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),

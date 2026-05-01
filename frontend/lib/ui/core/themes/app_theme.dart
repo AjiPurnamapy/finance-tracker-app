@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
-class AppTheme {
-  // Brand primary color
-  static const _primary = Color(0xFF137FEC);
+import 'app_colors.dart';
 
+class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: _primary,
+        seedColor: AppColors.primary,
         brightness: Brightness.light,
       ),
       scaffoldBackgroundColor: const Color(0xFFF8F9FA),
@@ -23,10 +22,10 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: _primary,
+        seedColor: AppColors.primary,
         brightness: Brightness.dark,
       ),
-      scaffoldBackgroundColor: const Color(0xFF0D1117),
+      scaffoldBackgroundColor: AppColors.background,
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,

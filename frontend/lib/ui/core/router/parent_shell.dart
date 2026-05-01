@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../themes/app_colors.dart';
 
 class ParentShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -13,7 +14,7 @@ class ParentShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: navigationShell,
       bottomNavigationBar: _DarkNavBar(
         currentIndex: navigationShell.currentIndex,
@@ -40,7 +41,7 @@ class ChildShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.background,
       body: navigationShell,
       bottomNavigationBar: _DarkNavBar(
         currentIndex: navigationShell.currentIndex,
@@ -80,7 +81,7 @@ class _DarkNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF111620),
+        color: AppColors.elevated,
         border: Border(
           top: BorderSide(
             color: Colors.white.withValues(alpha: 0.06),
@@ -104,7 +105,7 @@ class _DarkNavBar extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: selected
                       ? BoxDecoration(
-                          color: const Color(0xFF137FEC).withValues(alpha: 0.12),
+                          color: AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         )
                       : null,
@@ -115,7 +116,7 @@ class _DarkNavBar extends StatelessWidget {
                         items[i].icon,
                         size: 22,
                         color: selected
-                            ? const Color(0xFF137FEC)
+                            ? AppColors.primary
                             : Colors.white.withValues(alpha: 0.35),
                       ),
                       const SizedBox(height: 3),
@@ -125,7 +126,7 @@ class _DarkNavBar extends StatelessWidget {
                           fontSize: 10,
                           fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
                           color: selected
-                              ? const Color(0xFF137FEC)
+                              ? AppColors.primary
                               : Colors.white.withValues(alpha: 0.35),
                         ),
                       ),

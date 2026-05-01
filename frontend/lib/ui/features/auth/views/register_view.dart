@@ -60,8 +60,8 @@ class _RegisterViewState extends ConsumerState<RegisterView>
       // Auto-login triggers state change, so app_router handles the redirect.
     } on ApiException catch (e) {
       if (mounted) _showError(e.message);
-    } catch (e) {
-      if (mounted) _showError('Terjadi kesalahan: $e');
+    } catch (_) {
+      if (mounted) _showError('Tidak dapat terhubung ke server. Periksa koneksi internetmu.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

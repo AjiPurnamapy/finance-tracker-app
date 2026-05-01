@@ -180,20 +180,27 @@ class ApiClient {
       }
       return jsonResponse;
     } else {
-      String errorMessage = 'Unknown error';
+      String errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
       try {
         final errorJson =
             jsonDecode(response.body) as Map<String, dynamic>;
-        if (errorJson['detail'] is String) {
-          errorMessage = errorJson['detail'];
+
+        // Backend envelope: { "success": false, "error": { "message": "..." } }
+        if (errorJson['error'] is Map) {
+          final err = errorJson['error'] as Map<String, dynamic>;
+          if (err['message'] is String) {
+            errorMessage = err['message'] as String;
+          }
+        }
+        // FastAPI validation errors: { "detail": "..." | [ { "msg": "..." } ] }
+        else if (errorJson['detail'] is String) {
+          errorMessage = errorJson['detail'] as String;
         } else if (errorJson['detail'] is List) {
           errorMessage =
               (errorJson['detail'] as List).map((e) => e['msg']).join(', ');
-        } else {
-          errorMessage = errorJson.toString();
         }
       } catch (_) {
-        if (response.body.isNotEmpty) errorMessage = response.body;
+        // Body is not JSON — keep generic message
       }
       throw ApiException(response.statusCode, errorMessage);
     }

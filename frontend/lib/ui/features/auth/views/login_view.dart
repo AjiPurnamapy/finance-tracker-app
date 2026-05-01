@@ -54,12 +54,10 @@ class _LoginViewState extends ConsumerState<LoginView>
             _passwordController.text,
           );
     } on ApiException catch (e) {
+      if (mounted) _showError(e.message);
+    } catch (_) {
       if (mounted) {
-        _showError(e.message);
-      }
-    } catch (e) {
-      if (mounted) {
-        _showError('Terjadi kesalahan: $e');
+        _showError('Tidak dapat terhubung ke server. Periksa koneksi internetmu.');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

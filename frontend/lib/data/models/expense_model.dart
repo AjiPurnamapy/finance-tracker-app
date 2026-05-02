@@ -38,7 +38,7 @@ class ExpenseModel {
 
 /// Maps backend category values to display labels
 const Map<String, String> kExpenseCategoryLabels = {
-  'food_beverage': 'Makanan',
+  'food_dining': 'Makanan',
   'transportation': 'Transportasi',
   'entertainment': 'Hiburan',
   'shopping': 'Belanja',

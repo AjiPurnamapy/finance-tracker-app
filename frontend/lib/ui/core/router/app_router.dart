@@ -27,6 +27,7 @@ final _parentWalletKey = GlobalKey<NavigatorState>(debugLabel: 'parentWallet');
 
 // Child branch keys
 final _childHomeKey    = GlobalKey<NavigatorState>(debugLabel: 'childHome');
+final _childTasksKey   = GlobalKey<NavigatorState>(debugLabel: 'childTasks');
 final _childSavingsKey = GlobalKey<NavigatorState>(debugLabel: 'childSavings');
 final _childWalletKey  = GlobalKey<NavigatorState>(debugLabel: 'childWallet');
 final _childScanKey    = GlobalKey<NavigatorState>(debugLabel: 'childScan');
@@ -142,6 +143,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state, shell) =>
             ChildShell(navigationShell: shell),
         branches: [
+          // index 0 — Home
           StatefulShellBranch(
             navigatorKey: _childHomeKey,
             routes: [
@@ -151,6 +153,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // index 1 — Tasks
+          StatefulShellBranch(
+            navigatorKey: _childTasksKey,
+            routes: [
+              GoRoute(
+                path: '/child/tasks',
+                builder: (context, state) => const TasksView(),
+              ),
+            ],
+          ),
+          // index 2 — Savings
           StatefulShellBranch(
             navigatorKey: _childSavingsKey,
             routes: [
@@ -160,6 +173,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // index 3 — Wallet
           StatefulShellBranch(
             navigatorKey: _childWalletKey,
             routes: [
@@ -169,6 +183,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // index 4 — Scan
           StatefulShellBranch(
             navigatorKey: _childScanKey,
             routes: [
@@ -178,6 +193,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // index 5 — Family
           StatefulShellBranch(
             navigatorKey: _childFamilyKey,
             routes: [

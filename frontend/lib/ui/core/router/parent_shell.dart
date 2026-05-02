@@ -47,11 +47,12 @@ class ChildShell extends StatelessWidget {
         currentIndex: navigationShell.currentIndex,
         onTap: _onTap,
         items: const [
-          _NavItem(icon: Icons.home_rounded,                  label: 'Home'),
-          _NavItem(icon: Icons.savings_rounded,               label: 'Savings'),
-          _NavItem(icon: Icons.account_balance_wallet_rounded,label: 'Wallet'),
-          _NavItem(icon: Icons.qr_code_scanner_rounded,       label: 'Scan'),
-          _NavItem(icon: Icons.people_rounded,                label: 'Family'),
+          _NavItem(icon: Icons.home_rounded,                   label: 'Home'),
+          _NavItem(icon: Icons.task_alt_rounded,               label: 'Tasks'),
+          _NavItem(icon: Icons.savings_rounded,                label: 'Savings'),
+          _NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Wallet'),
+          _NavItem(icon: Icons.qr_code_scanner_rounded,        label: 'Scan'),
+          _NavItem(icon: Icons.people_rounded,                 label: 'Family'),
         ],
       ),
     );
@@ -102,7 +103,7 @@ class _DarkNavBar extends StatelessWidget {
                 onTap: () => onTap(i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   decoration: selected
                       ? BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.12),

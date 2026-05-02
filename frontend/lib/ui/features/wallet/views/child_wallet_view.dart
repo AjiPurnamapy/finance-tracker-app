@@ -397,7 +397,7 @@ class _TransactionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tx.description ?? (isCredit ? 'Kredit' : 'Debit'),
+                  tx.description,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,

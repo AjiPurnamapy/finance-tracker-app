@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/models/expense_model.dart';
@@ -67,7 +68,7 @@ class ChildHomeView extends ConsumerWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => context.go('/child/wallet'),
                         child: const Text(
                           'Lihat Semua',
                           style: TextStyle(
@@ -134,8 +135,27 @@ class _AddExpenseSheet extends ConsumerStatefulWidget {
 }
 
 const _kExpenseCategories = [
-  'Food', 'Transport', 'Education', 'Entertainment', 'Health', 'Other'
+  'food_dining',
+  'transportation',
+  'shopping',
+  'entertainment',
+  'education',
+  'health',
+  'other',
 ];
+
+String _categoryLabel(String cat) {
+  const labels = {
+    'food_dining': 'Makanan & Minuman',
+    'transportation': 'Transportasi',
+    'shopping': 'Belanja',
+    'entertainment': 'Hiburan',
+    'education': 'Pendidikan',
+    'health': 'Kesehatan',
+    'other': 'Lainnya',
+  };
+  return labels[cat] ?? cat;
+}
 
 class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   final _titleController = TextEditingController();
@@ -252,7 +272,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               ),
             ),
             items: _kExpenseCategories
-                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .map((c) => DropdownMenuItem(value: c, child: Text(_categoryLabel(c))))
                 .toList(),
             onChanged: (v) => setState(() => _category = v ?? _category),
           ),
@@ -620,7 +640,7 @@ class _BalanceCard extends StatelessWidget {
           const SizedBox(height: 20),
           // View Trends button
           GestureDetector(
-            onTap: () {},
+            onTap: () => context.go('/child/wallet'),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -655,11 +675,12 @@ class _BalanceCard extends StatelessWidget {
 // ── Category Chips ────────────────────────────────────────────────────────────
 
 const _kCategories = [
-  ('food_beverage', Icons.restaurant_rounded, 'Makanan'),
+  ('food_dining', Icons.restaurant_rounded, 'Makanan'),
   ('transportation', Icons.directions_bus_rounded, 'Transport'),
   ('entertainment', Icons.sports_esports_rounded, 'Hiburan'),
   ('shopping', Icons.shopping_bag_rounded, 'Belanja'),
   ('education', Icons.school_rounded, 'Pendidikan'),
+  ('health', Icons.favorite_rounded, 'Kesehatan'),
   ('other', Icons.more_horiz_rounded, 'Lainnya'),
 ];
 

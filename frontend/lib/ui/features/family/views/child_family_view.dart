@@ -61,10 +61,10 @@ class _NotConnectedStateState extends ConsumerState<_NotConnectedState> {
   }
 
   Future<void> _join() async {
-    final code = _codeController.text.trim().toUpperCase();
-    // M-5: Validate alphanumeric, exactly 6 chars
-    if (code.length != 6 || !RegExp(r'^[A-Z0-9]{6}$').hasMatch(code)) {
-      setState(() => _error = 'Kode harus 6 karakter (huruf/angka)');
+    final code = _codeController.text.trim();
+    // Validate exactly 6 digits
+    if (code.length != 6 || !RegExp(r'^\d{6}$').hasMatch(code)) {
+      setState(() => _error = 'Kode harus 6 digit angka');
       return;
     }
     setState(() {
